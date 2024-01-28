@@ -5,7 +5,7 @@ import scipy.signal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-""" RealTime Audio Time-Frequency plot """
+""" RealTime Audio Spectrogram plot """
 
 # VARS CONSTS:
 _VARS = {"window": False, "stream": False, "audioData": np.array([])}
@@ -31,7 +31,7 @@ layout = [
     ],
 ]
 _VARS["window"] = sg.Window(
-    "Mic to time-frequency plot + Max Level", layout, finalize=True
+    "Mic to spectrogram plot + Max Level", layout, finalize=True
 )
 
 graph = _VARS["window"]["graph"]
@@ -101,23 +101,18 @@ while True:
         stop()
 
     # Along with the global audioData variable, this
-    # bit updates the time-frequency plot
+    # bit updates the spectrogram plot
 
     elif _VARS["audioData"].size != 0:
         # Update volume meter
         _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
-        # Compute time-frequency spectrum
-        f, Pxx = scipy.signal.periodogram(
-            _VARS["audioData"], fs=RATE
-        )  # compute the power spectral density
-        t = np.arange(len(_VARS["audioData"])) / RATE  # create the time axis
-        # Plot time-frequency spectrum
+        # Compute spectrogram
+        f, t, Sxx = scipy.signal.spectrogram(_VARS["audioData"], fs=RATE)
+        # Plot spectrogram
         ax.clear()  # clear the previous plot
-        # Resize the frequency array to match the length of the time array
-        f = np.resize(f, t.shape)
-        # Plot the time-frequency spectrum as a line graph
-        ax.plot(t, f)
-
+        ax.pcolormesh(
+            t, f, Sxx, shading="gouraud"
+        )  # plot the spectrogram as a colored mesh
         ax.set_ylabel("Frequency [Hz]")  # set the y-axis label
         ax.set_xlabel("Time [sec]")  # set the x-axis label
         fig_agg.draw()  # redraw the figure
