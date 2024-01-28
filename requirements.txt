@@ -5,10 +5,10 @@ fonttools==4.47.2
 importlib-resources==6.1.1
 kiwisolver==1.4.5
 matplotlib==3.7.4
-mkl-fft @ file:///C:/b/abs_19i1y8ykas/croot/mkl_fft_1695058226480/work
-mkl-random @ file:///C:/b/abs_edwkj1_o69/croot/mkl_random_1695059866750/work
+mkl-fft
+mkl-random
 mkl-service==2.4.0
-numpy @ file:///C:/Users/dev-admin/mkl/numpy_and_numpy_base_1682982345978/work
+numpy
 packaging==23.2
 pillow==10.2.0
 PyAudio==0.2.14
