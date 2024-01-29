@@ -32,3 +32,6 @@ To use SoundScape, you need to install the requirements from ```requirements.txt
 
 # Contribution Guidelines
 Please refer to the ```Contributing.md``` for details.
+
+# References
+Please refer to the ```References.md``` for details.
