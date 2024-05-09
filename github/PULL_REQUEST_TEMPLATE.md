@@ -4,12 +4,11 @@
 ## Description
 [Detailed description of the changes made]
 
+## Linked Issue
+Please link the issue that this PR resolves in the format: `#[issue_number] [issue_name]`s
+
 ## Changes and Additions
 - [List of changes and additions]
-
-## Linked Issue
-Please link the issue that this PR resolves in the format: `#[issue_number] [issue_name]`
-
 
 ## Testing and Validation
 [Describe how the changes were tested and validated]
