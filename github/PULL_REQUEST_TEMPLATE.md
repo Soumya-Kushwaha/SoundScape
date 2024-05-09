@@ -5,7 +5,7 @@
 [Detailed description of the changes made]
 
 ## Linked Issue
-Please link the issue that this PR resolves in the format: `#[issue_number] [issue_name]`s
+Please link the issue that this PR resolves in the format: `#[issue_number] [issue_name]`
 
 ## Changes and Additions
 - [List of changes and additions]
