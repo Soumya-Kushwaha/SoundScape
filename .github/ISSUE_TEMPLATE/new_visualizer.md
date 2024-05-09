@@ -1,7 +1,7 @@
 ---
 name: Visualizer Enhancement
 about: Propose improvements or report issues related to the visualizer
-title: "[Visualizer]"
+title: "[visualizer]"
 labels: 'visualizer'
 assignees: ''
 
