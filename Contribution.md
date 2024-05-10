@@ -57,6 +57,9 @@ If you have any ideas or suggestions for improving the project, such as adding n
 If you want to contribute to the project by fixing bugs, implementing features, or improving the documentation, you are welcome to submit pull requests on GitHub. Before creating a pull request, please follow these steps:
 
 - Fork the repository and create a new branch for your changes.
+  ```
+  git clone https://github.com/Soumya-Kushwaha/SoundScape.git
+  ```
 - Make sure your code follows the PEP 8 style guide and is well-commented and documented.
 - Make sure your code is tested and does not introduce any new errors or warnings.
 - Make sure your code does not conflict with the existing code base and can be merged smoothly.
