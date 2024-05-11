@@ -17,6 +17,7 @@ Welcome to SoundScape, an innovative Python project that transforms your surroun
     - [LISTEN](#listen)
     - [STOP](#stop)
     - [EXIT](#exit)
+  - [Contribution Guidelines](#contribution-guidelines)
 
 ## Inroduction
 
@@ -83,3 +84,7 @@ To pause the visualizer to listen for the time being, click on this button.
 ### EXIT
 
 Click on this button to destroy or close the visualizer window.
+
+## Contribution Guidelines
+
+Please refer to the ```Contributing.md``` file for contribution details.
