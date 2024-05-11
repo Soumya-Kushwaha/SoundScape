@@ -11,6 +11,12 @@ Welcome to SoundScape, an innovative Python project that transforms your surroun
     - [Waveform](#waveform)
     - [Spectogram](#spectogram)
     - [Frequency v/s Amplitude](#frequency-vs-amplitude)
+  - [Installation](#installation)
+    - [Dependencies](#dependencies)
+  - [Usage Guide](#usage-guide)
+    - [LISTEN](#listen)
+    - [STOP](#stop)
+    - [EXIT](#exit)
 
 ## Inroduction
 
@@ -34,3 +40,46 @@ SoundScape provides different visualizers(or processors) that allows users to ob
 
 - This visualizer dynamically displays the relationship between frequency and amplitude in real-time audio, allowing users to observe how different frequencies contribute to the overall sound intensity. 
 - Understanding this relationship is essential for tasks such as sound equalization, noise reduction, and audio synthesis.
+
+## Installation
+
+To run SoundScape, ensure you have Python 3.6 or higher and pip installed on your system, along with a microphone.
+
+### Dependencies
+
+SoundScape relies on the following Python libraries:
+
+- PyAudio
+- PySimpleGUI
+- NumPy
+- SciPy
+- Matplotlib
+
+You can install these dependencies usign pip:
+
+```pip install -r requirements.txt'```
+
+*For  further information please refer to ```installation.md``` file.
+
+## Usage Guide
+
+- As you know by now SoundScape offers three visualization options.
+- In order to use these visulizers, one needs to run their individual ```.py``` files.
+  
+1. WAVEFORM: ```python waveform.py```
+2. SPECTROGRAM: ```python spectrogram.py```
+3. AMPLITUDE V/S FREQUENCY: ```amplitude-frequency-visualizer.py```
+
+Then, using these visualizers is quite intutive, each visualizer provides three buttons:
+
+### LISTEN
+
+Click on this button for enabling the visualizer to start listening the environment.
+
+### STOP
+
+To pause the visualizer to listen for the time being, click on this button.
+
+### EXIT
+
+Click on this button to destroy or close the visualizer window.
