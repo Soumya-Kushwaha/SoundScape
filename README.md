@@ -29,20 +29,26 @@ SoundScape provides different visualizers(or processors) that allows users to ob
 
 ## Visualizers(Processors)
 
-### Waveform
+### 1. Waveform
 
 - This visualizer showcases the waveform of audio in real-time, providing users with a direct representation of sound amplitude over time.
 - It's essential for understanding the basic structure and dynamics of audio signals, making it an indispensable tool for sound enthusiasts and learners alike.
   
-### Spectogram
+![300273015-db464b28-ba01-40bf-a246-eed9f42c49d2](https://github.com/saiyam-sandhir/SoundScape/assets/86138251/171b1d21-281f-4562-87ac-4293ce65ba65)
+
+### 2. Spectogram
 
 - The spectogram visualizer illustrates the change in frequency across time, offering a detailed depiction of the frequency content of audio signals.
 - This visualization is crucial for analyzing complex sound patterns and identifying specific frequencies present in audio recordings, making it invaluable for tasks like audio processing, music production, and scientific research.
 
-### Frequency v/s Amplitude
+![300272854-a346cd22-9bd4-4d6e-b700-a419ab842703](https://github.com/saiyam-sandhir/SoundScape/assets/86138251/8a680dbf-dcf7-45c1-ac25-cf2280649929)
+
+### 3. Frequency v/s Amplitude
 
 - This visualizer dynamically displays the relationship between frequency and amplitude in real-time audio, allowing users to observe how different frequencies contribute to the overall sound intensity.
 - Understanding this relationship is essential for tasks such as sound equalization, noise reduction, and audio synthesis.
+
+![300272350-725fe4a1-4d1a-4a2d-819b-703b6d11047d](https://github.com/saiyam-sandhir/SoundScape/assets/86138251/73d9244b-5c95-4056-ba6c-9d477eddac0f)
 
 ## Installation
 
@@ -79,13 +85,19 @@ Then, using these visualizers is quite intutive, each visualizer provides three 
 
 Click on this button for enabling the visualizer to start listening the environment.
 
+![Screenshot 2024-05-11 082102](https://github.com/saiyam-sandhir/SoundScape/assets/86138251/a6ff2d37-8102-4ba0-a960-b84b803305e4)
+
 ### STOP
 
 To pause the visualizer to listen for the time being, click on this button.
 
+![Screenshot 2024-05-11 082049](https://github.com/saiyam-sandhir/SoundScape/assets/86138251/fe0d3f19-de38-41b2-a729-295a8673bfb0)
+
 ### EXIT
 
 Click on this button to destroy or close the visualizer window.
+
+![Screenshot 2024-05-11 082014](https://github.com/saiyam-sandhir/SoundScape/assets/86138251/fa1b910d-2141-4818-b38d-48420a8e7b16)
 
 ## Contribution Guidelines
 
