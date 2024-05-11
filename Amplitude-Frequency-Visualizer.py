@@ -1,22 +1,22 @@
 import PySimpleGUI as sg
 import pyaudio
 import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import soundfile as sf
 import scipy.fft
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-""" RealTime Audio Frequency plot """
 
 # VARS CONSTS:
-_VARS = {"window": False, "stream": False, "audioData": np.array([])}
+_VARS = {"window": False, "stream": False, "audioData": np.array([]), "audioBuffer": np.array([])}
 
 # pysimpleGUI INIT:
 AppFont = "Any 16"
 sg.theme("DarkBlue3")
+
 layout = [
     [
         sg.Graph(
-            canvas_size=(500, 500),
+            canvas_size=(600, 600),
             graph_bottom_left=(-2, -2),
             graph_top_right=(102, 102),
             background_color="#809AB6",
@@ -26,12 +26,15 @@ layout = [
     [sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
     [
         sg.Button("Listen", font=AppFont),
+        sg.Button("Pause", font=AppFont, disabled=True),
+        sg.Button("Resume", font=AppFont, disabled=True),
         sg.Button("Stop", font=AppFont, disabled=True),
+        sg.Button("Save", font=AppFont, disabled=True),
         sg.Button("Exit", font=AppFont),
     ],
 ]
-_VARS["window"] = sg.Window("Mic to frequency plot + Max Level", layout, finalize=True)
 
+_VARS["window"] = sg.Window("Mic to frequency plot + Max Level", layout, finalize=True)
 graph = _VARS["window"]["graph"]
 
 # INIT vars:
@@ -43,16 +46,12 @@ pAud = pyaudio.PyAudio()
 
 # FUNCTIONS:
 
-
-# PySimpleGUI plots:
 def draw_figure(canvas, figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
     figure_canvas_agg.draw()
     figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
     return figure_canvas_agg
 
-
-# pyaudio stream:
 def stop():
     if _VARS["stream"]:
         _VARS["stream"].stop_stream()
@@ -61,12 +60,33 @@ def stop():
         _VARS["window"]["Stop"].Update(disabled=True)
         _VARS["window"]["Listen"].Update(disabled=False)
 
+def pause():
+    if _VARS["stream"].is_active():
+        _VARS["stream"].stop_stream()
+        _VARS["window"]["Pause"].Update(disabled=True)
+        _VARS["window"]["Resume"].Update(disabled=False)
 
-# callback:
+def resume():
+    if not _VARS["stream"].is_active():
+        _VARS["stream"].start_stream()
+        _VARS["window"]["Pause"].Update(disabled=False)
+        _VARS["window"]["Resume"].Update(disabled=True)
+
+def save():
+    # Ask the user for a directory to save the image file
+    folder = sg.popup_get_folder('Please select a directory to save the files')
+    if folder:
+        # Save the figure as an image file
+        fig.savefig(f'{folder}/output.png')
+        sg.popup('Success', f'Image saved as {folder}/output.png')
+        # Save the recorded audio data to a file
+        sf.write(f'{folder}/output.wav', _VARS["audioBuffer"], RATE)
+        sg.popup('Success', f'Audio saved as {folder}/output.wav')
+
 def callback(in_data, frame_count, time_info, status):
     _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
+    _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], _VARS["audioData"])
     return (in_data, pyaudio.paContinue)
-
 
 def listen():
     _VARS["window"]["Stop"].Update(disabled=False)
@@ -81,7 +101,6 @@ def listen():
     )
     _VARS["stream"].start_stream()
 
-
 # INIT:
 fig, ax = plt.subplots()  # create a figure and an axis object
 fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
@@ -95,23 +114,26 @@ while True:
         break
     if event == "Listen":
         listen()
+        _VARS["window"]["Save"].Update(disabled=False)
+    if event == "Pause":
+        pause()
+    if event == "Resume":
+        resume()
     if event == "Stop":
         stop()
-
-    # Along with the global audioData variable, this
-    # bit updates the frequency plot
+    if event == "Save":
+        save()
 
     elif _VARS["audioData"].size != 0:
-        # Update volume meter
         _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
-        # Compute frequency spectrum
-        yf = scipy.fft.fft(_VARS["audioData"])  # compute the discrete Fourier transform
-        xf = np.linspace(0.0, RATE / 2, CHUNK // 2)  # create the frequency axis
-        # Plot frequency spectrum
-        ax.clear()  # clear the previous plot
+        yf = scipy.fft.fft(_VARS["audioData"])  
+        xf = np.linspace(0.0, RATE / 2, CHUNK // 2)  
+        ax.clear()  
         ax.plot(
-            xf, 2.0 / CHUNK * np.abs(yf[: CHUNK // 2])
-        )  # plot the frequency spectrum as a line graph
-        ax.set_ylabel("Amplitude")  # set the y-axis label
-        ax.set_xlabel("Frequency [Hz]")  # set the x-axis label
+            xf, 2.0 / CHUNK * np.abs(yf[: CHUNK // 2]), label='Frequency Spectrum'
+        )  
+        ax.set_ylabel("Amplitude")  
+        ax.set_xlabel("Frequency [Hz]")  
+        ax.grid(True)  # Enable gridlines
+        ax.legend()  # Add a legend
         fig_agg.draw()  # redraw the figure
