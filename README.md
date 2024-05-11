@@ -31,7 +31,7 @@ SoundScape provides different visualizers(or processors) that allows users to ob
 
 ### Waveform
 
-- This visualizer showcases the waveform of audio in real-time, providing users with a direct representation of sound amplitude over time. 
+- This visualizer showcases the waveform of audio in real-time, providing users with a direct representation of sound amplitude over time.
 - It's essential for understanding the basic structure and dynamics of audio signals, making it an indispensable tool for sound enthusiasts and learners alike.
   
 ### Spectogram
@@ -41,7 +41,7 @@ SoundScape provides different visualizers(or processors) that allows users to ob
 
 ### Frequency v/s Amplitude
 
-- This visualizer dynamically displays the relationship between frequency and amplitude in real-time audio, allowing users to observe how different frequencies contribute to the overall sound intensity. 
+- This visualizer dynamically displays the relationship between frequency and amplitude in real-time audio, allowing users to observe how different frequencies contribute to the overall sound intensity.
 - Understanding this relationship is essential for tasks such as sound equalization, noise reduction, and audio synthesis.
 
 ## Installation
