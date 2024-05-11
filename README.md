@@ -6,7 +6,7 @@ Welcome to SoundScape, an innovative Python project that transforms your surroun
 
 - [SoundScape](#soundscape)
   - [Table of Contents](#table-of-contents)
-  - [Inroduction](#inroduction)
+  - [Inroduction \& Features](#inroduction--features)
   - [Visualizers(Processors)](#visualizersprocessors)
     - [Waveform](#waveform)
     - [Spectogram](#spectogram)
@@ -18,8 +18,10 @@ Welcome to SoundScape, an innovative Python project that transforms your surroun
     - [STOP](#stop)
     - [EXIT](#exit)
   - [Contribution Guidelines](#contribution-guidelines)
+  - [References](#references)
+  - [Future Development](#future-development)
 
-## Inroduction
+## Inroduction & Features
 
 SoundScape is a fun Python project that visualizes the real-time audio recorded through a microphone, using the [PyAudio](https://pypi.org/project/PyAudio/) and [PySimpleGUI](https://pypi.org/project/PySimpleGUI/) libraries. It creates a dynamic and interactive soundscape that changes according to the sound input. You can use it to explore the sound properties of different environments, such as a busy street, a quiet park, or a noisy classroom.
 
@@ -60,7 +62,7 @@ You can install these dependencies usign pip:
 
 ```pip install -r requirements.txt'```
 
-*For  further information please refer to ```installation.md``` file.
+*For  further information please refer to [```installation.md```](https://github.com/Soumya-Kushwaha/SoundScape/blob/main/Installation.md) file.*
 
 ## Usage Guide
 
@@ -87,4 +89,17 @@ Click on this button to destroy or close the visualizer window.
 
 ## Contribution Guidelines
 
-Please refer to the ```Contributing.md``` file for contribution details.
+Your contributions and suggestions are always welcome. For bug report and feature requests, please create an issue.
+
+Please refer to the [```Contributing.md```](https://github.com/Soumya-Kushwaha/SoundScape/blob/main/Contribution.md) file for contribution details.
+
+## References
+
+Please refer to the [```References.md```](https://github.com/Soumya-Kushwaha/SoundScape/blob/main/References.md) file for details.
+
+## Future Development
+
+1. **UI Updates:** We plan to transition from PySimpleGUI to CustomTkinter for the user interface to increase flexibility and aesthetic appeal. This update will allow for more customization options and better integration with the overall design of the project.
+2. **Additional Visualizers:** We're exploring the addition of new visualizers to expand the range of sound visualization options available in SoundScape.
+3. **Performance Optimization:** We're committed to optimizing the performance of SoundScape to ensure smooth and efficient operation.
+4. **Community Engagement:** We value community feedback and encourage users to share their ideas, suggestions, and contributions to help shape the future development of SoundScape.
