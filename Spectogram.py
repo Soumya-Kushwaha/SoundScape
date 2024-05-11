@@ -43,6 +43,11 @@ INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
 TIMEOUT = 10  # In ms for the event loop
 pAud = pyaudio.PyAudio()
 
+try:
+    pAud.get_device_info_by_index(0)
+except pyaudio.CoreError as e:
+    print(f"Error initializing PyAudio: {e}")
+    pAud = None
 # FUNCTIONS:
 
 
