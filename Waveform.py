@@ -22,6 +22,9 @@ layout = [
     ],
     [sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
     [
+        sg.Text("", size=(20, 1), key="-VALUES-"),  # Added text element for displaying values
+    ],
+    [
         sg.Button("Listen", font=AppFont),
         sg.Button("Stop", font=AppFont, disabled=True),
         sg.Button("Exit", font=AppFont),
@@ -116,6 +119,9 @@ while True:
                 line_color="blue",
                 fill_color="blue",
             )
-
+        
+        # Displaying values on screen
+        _VALUES = ', '.join([str(value) for value in _VARS["audioData"][:10]])  # Display first 10 values
+        _VARS["window"]["-VALUES-"].update(_VALUES)
 
 _VARS["window"].close()
