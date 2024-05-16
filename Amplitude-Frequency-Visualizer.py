@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 _VARS = {"window": False, "stream": False, "audioData": np.array([]), "audioBuffer": np.array([])}
 
 # pysimpleGUI INIT:
-AppFont = "Any 16"
+AppFont = "Helvetica"
 sg.theme("DarkBlue3")
 
 layout = [
@@ -21,20 +21,21 @@ layout = [
             graph_top_right=(102, 102),
             background_color="#809AB6",
             key="graph",
+            tooltip="Frequency graph"  # Tooltip added
         )
     ],
-    [sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
+    [sg.Text("Progress:", text_color='white', font=('Helvetica', 15, 'bold')), sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],  
     [
-        sg.Button("Listen", font=AppFont),
-        sg.Button("Pause", font=AppFont, disabled=True),
-        sg.Button("Resume", font=AppFont, disabled=True),
-        sg.Button("Stop", font=AppFont, disabled=True),
-        sg.Button("Save", font=AppFont, disabled=True),
-        sg.Button("Exit", font=AppFont),
+        sg.Button("Listen", font=AppFont, tooltip="Start listening"),
+        sg.Button("Pause", font=AppFont, disabled=True, tooltip="Pause listening"), 
+        sg.Button("Resume", font=AppFont, disabled=True, tooltip="Resume listening"),
+        sg.Button("Stop", font=AppFont, disabled=True, tooltip="Stop listening"),  
+        sg.Button("Save", font=AppFont, disabled=True, tooltip="Save the plot"),  
+        sg.Button("Exit", font=AppFont, tooltip="Exit the application"), 
     ],
 ]
 
-_VARS["window"] = sg.Window("Mic to frequency plot + Max Level", layout, finalize=True)
+_VARS["window"] = sg.Window("Mic to frequency plot + Max Level", layout, finalize=True)  
 graph = _VARS["window"]["graph"]
 
 # INIT vars:
