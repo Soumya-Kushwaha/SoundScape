@@ -34,4 +34,7 @@ To use SoundScape, you need to install the requirements from ```requirements.txt
 Please refer to the ```Contributing.md``` for details.
 
 # References
-Please refer to the ```References.md``` for details.
+Please refer to the ```References.md``` for details.<br>
+You can able to know more about the repo by seeing the below video use earphones for better audio 
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/QcJxz4xIE4k/0.jpg)](https://www.youtube.com/watch?v=QcJxz4xIE4k)
