@@ -4,13 +4,16 @@ import numpy as np
 import scipy.signal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import threading
+import queue
 
 """ RealTime Audio Spectrogram plot """
 
 # VARS CONSTS:
 _VARS = {"window": False, "stream": False, "audioData": np.array([])}
+audio_buffer = queue.Queue(maxsize=10)  # Buffer for audio data
 
-# pysimpleGUI INIT:
+# PySimpleGUI INIT:
 AppFont = "Any 16"
 sg.theme("DarkBlue3")
 layout = [
@@ -48,8 +51,8 @@ try:
 except pyaudio.CoreError as e:
     print(f"Error initializing PyAudio: {e}")
     pAud = None
-# FUNCTIONS:
 
+# FUNCTIONS:
 
 # PySimpleGUI plots:
 def draw_figure(canvas, figure):
@@ -71,7 +74,7 @@ def stop():
 
 # callback:
 def callback(in_data, frame_count, time_info, status):
-    _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
+    audio_buffer.put(np.frombuffer(in_data, dtype=np.int16))  # Put data in buffer
     return (in_data, pyaudio.paContinue)
 
 
@@ -89,11 +92,33 @@ def listen():
     _VARS["stream"].start_stream()
 
 
+# Multithreading for audio processing and plotting
+def audio_processing_thread():
+    while True:
+        audio_data = audio_buffer.get()  # Get audio data from buffer
+        if audio_data.size != 0:
+            # Update volume meter
+            _VARS["window"]["-PROG-"].update(np.amax(audio_data))
+            # Compute spectrogram
+            f, t, Sxx = scipy.signal.spectrogram(audio_data, fs=RATE)
+            # Plot spectrogram
+            ax.clear()  # clear the previous plot
+            ax.pcolormesh(
+                t, f, Sxx, shading="gouraud"
+            )  # plot the spectrogram as a colored mesh
+            ax.set_ylabel("Frequency [Hz]")  # set the y-axis label
+            ax.set_xlabel("Time [sec]")  # set the x-axis label
+            fig_agg.draw()  # redraw the figure
+
+
 # INIT:
 fig, ax = plt.subplots()  # create a figure and an axis object
 fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
 
-# MAIN LOOP
+# MAIN THREAD
+audio_thread = threading.Thread(target=audio_processing_thread, daemon=True)
+audio_thread.start()
+
 while True:
     event, values = _VARS["window"].read(timeout=TIMEOUT)
     if event == sg.WIN_CLOSED or event == "Exit":
@@ -104,20 +129,3 @@ while True:
         listen()
     if event == "Stop":
         stop()
-
-    # Along with the global audioData variable, this
-    # bit updates the spectrogram plot
-
-    elif _VARS["audioData"].size != 0:
-        # Update volume meter
-        _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
-        # Compute spectrogram
-        f, t, Sxx = scipy.signal.spectrogram(_VARS["audioData"], fs=RATE)
-        # Plot spectrogram
-        ax.clear()  # clear the previous plot
-        ax.pcolormesh(
-            t, f, Sxx, shading="gouraud"
-        )  # plot the spectrogram as a colored mesh
-        ax.set_ylabel("Frequency [Hz]")  # set the y-axis label
-        ax.set_xlabel("Time [sec]")  # set the x-axis label
-        fig_agg.draw()  # redraw the figure
