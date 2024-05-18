@@ -7,13 +7,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import threading
 import queue
 
-""" RealTime Audio Spectrogram plot """
-
-# VARS CONSTS:
-_VARS = {"window": False, "stream": False, "audioData": np.array([])}
+# Global variables
+_VARS = {"window": None, "stream": None, "audioData": np.array([])}
 audio_buffer = queue.Queue(maxsize=10)  # Buffer for audio data
+stop_event = threading.Event()  # Event to signal stopping of the audio stream
 
-# PySimpleGUI INIT:
+# PySimpleGUI initialization
 AppFont = "Any 16"
 sg.theme("DarkBlue3")
 layout = [
@@ -37,50 +36,35 @@ _VARS["window"] = sg.Window(
     "Mic to spectrogram plot + Max Level", layout, finalize=True
 )
 
-graph = _VARS["window"]["graph"]
-
-# INIT vars:
-CHUNK = 1024  # Samples: 1024,  512, 256, 128
-RATE = 44100  # Equivalent to Human Hearing at 40 kHz
-INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
-TIMEOUT = 10  # In ms for the event loop
+# PyAudio initialization
 pAud = pyaudio.PyAudio()
+CHUNK = 1024
+RATE = 44100
+INTERVAL = 1
+TIMEOUT = 100  # Adjusted timeout value
 
-try:
-    pAud.get_device_info_by_index(0)
-except pyaudio.CoreError as e:
-    print(f"Error initializing PyAudio: {e}")
-    pAud = None
+# Functions
 
-# FUNCTIONS:
-
-# PySimpleGUI plots:
-def draw_figure(canvas, figure):
-    figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
-    figure_canvas_agg.draw()
-    figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
-    return figure_canvas_agg
-
-
-# pyaudio stream:
 def stop():
-    if _VARS["stream"]:
+    if _VARS["stream"] is not None and _VARS["stream"].is_active():
+        stop_event.set()  # Signal the audio processing thread to stop
         _VARS["stream"].stop_stream()
         _VARS["stream"].close()
+        _VARS["stream"] = None
         _VARS["window"]["-PROG-"].update(0)
-        _VARS["window"]["Stop"].Update(disabled=True)
-        _VARS["window"]["Listen"].Update(disabled=False)
+        _VARS["window"]["Stop"].update(disabled=True)
+        _VARS["window"]["Listen"].update(disabled=False)
+        stop_event.clear()  # Reset the event for the next use
 
-
-# callback:
 def callback(in_data, frame_count, time_info, status):
-    audio_buffer.put(np.frombuffer(in_data, dtype=np.int16))  # Put data in buffer
+    if stop_event.is_set():
+        return (in_data, pyaudio.paComplete)
+    audio_buffer.put(np.frombuffer(in_data, dtype=np.int16))
     return (in_data, pyaudio.paContinue)
 
-
 def listen():
-    _VARS["window"]["Stop"].Update(disabled=False)
-    _VARS["window"]["Listen"].Update(disabled=True)
+    _VARS["window"]["Stop"].update(disabled=False)
+    _VARS["window"]["Listen"].update(disabled=True)
     _VARS["stream"] = pAud.open(
         format=pyaudio.paInt16,
         channels=1,
@@ -91,41 +75,44 @@ def listen():
     )
     _VARS["stream"].start_stream()
 
+def audio_processing(ax, fig_agg):
+    while not stop_event.is_set():
+        try:
+            audio_data = audio_buffer.get(timeout=1)
+            if audio_data.size != 0:
+                _VARS["window"]["-PROG-"].update(np.amax(audio_data))
+                f, t, Sxx = scipy.signal.spectrogram(audio_data, fs=RATE)
+                ax.clear()
+                ax.pcolormesh(t, f, Sxx, shading="gouraud")
+                ax.set_ylabel("Frequency [Hz]")
+                ax.set_xlabel("Time [sec]")
+                fig_agg.draw()
+        except queue.Empty:
+            continue
 
-# Multithreading for audio processing and plotting
-def audio_processing_thread():
+def main():
+    # Initialization
+    fig, ax = plt.subplots()
+    fig_agg = FigureCanvasTkAgg(fig, _VARS["window"]["graph"].TKCanvas)
+    fig_agg.draw()
+    fig_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
+
+    # Multithreading for audio processing
+    audio_thread = threading.Thread(target=audio_processing, args=(ax, fig_agg))
+    audio_thread.daemon = True
+    audio_thread.start()
+
+    # Event loop
     while True:
-        audio_data = audio_buffer.get()  # Get audio data from buffer
-        if audio_data.size != 0:
-            # Update volume meter
-            _VARS["window"]["-PROG-"].update(np.amax(audio_data))
-            # Compute spectrogram
-            f, t, Sxx = scipy.signal.spectrogram(audio_data, fs=RATE)
-            # Plot spectrogram
-            ax.clear()  # clear the previous plot
-            ax.pcolormesh(
-                t, f, Sxx, shading="gouraud"
-            )  # plot the spectrogram as a colored mesh
-            ax.set_ylabel("Frequency [Hz]")  # set the y-axis label
-            ax.set_xlabel("Time [sec]")  # set the x-axis label
-            fig_agg.draw()  # redraw the figure
+        event, values = _VARS["window"].read(timeout=TIMEOUT)  # Adjusted timeout value
+        if event == sg.WINDOW_CLOSED or event == "Exit":
+            stop()
+            pAud.terminate()
+            break
+        elif event == "Listen":
+            listen()
+        elif event == "Stop":
+            stop()
 
-
-# INIT:
-fig, ax = plt.subplots()  # create a figure and an axis object
-fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
-
-# MAIN THREAD
-audio_thread = threading.Thread(target=audio_processing_thread, daemon=True)
-audio_thread.start()
-
-while True:
-    event, values = _VARS["window"].read(timeout=TIMEOUT)
-    if event == sg.WIN_CLOSED or event == "Exit":
-        stop()
-        pAud.terminate()
-        break
-    if event == "Listen":
-        listen()
-    if event == "Stop":
-        stop()
+if __name__ == "__main__":
+    main()
