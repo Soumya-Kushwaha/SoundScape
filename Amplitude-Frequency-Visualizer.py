@@ -109,8 +109,14 @@ fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
 # MAIN LOOP
 while True:
     event, values = _VARS["window"].read(timeout=TIMEOUT)
-    if event == sg.WIN_CLOSED or event == "Exit":
+    if event == "Exit":
         stop()
+        pAud.terminate()
+        break
+    # for handling the closing of application
+    if event == sg.WIN_CLOSED :
+        _VARS["stream"].stop_stream()
+        _VARS["stream"].close()
         pAud.terminate()
         break
     if event == "Listen":
