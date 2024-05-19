@@ -32,16 +32,14 @@ layout = [
         sg.Button("Exit", font=AppFont),
     ],
 ]
-_VARS["window"] = sg.Window(
-    "Mic to spectrogram plot + Max Level", layout, finalize=True
-)
+_VARS["window"] = sg.Window("Mic to spectrogram plot + Max Level", layout, finalize=True)
 
 # PyAudio initialization
 pAud = pyaudio.PyAudio()
 CHUNK = 1024
 RATE = 44100
 INTERVAL = 1
-TIMEOUT = 100  # Adjusted timeout value
+TIMEOUT = 100 # Adjusted timeout value
 
 def stop():
     if _VARS["stream"] is not None and _VARS["stream"].is_active():
