@@ -4,16 +4,23 @@ import numpy as np
 import scipy.fft
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import subprocess
+
 
 """Realtime Sound Intensity vs Frequency heatmap"""
-
 # VARS CONSTS:
-_VARS = {"window": False, "stream": False, "audioData": np.array([])}
+_VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_visualizer_process": None}
 
 # pysimpleGUI INIT:
 AppFont = "Any 16"
 sg.theme("DarkBlue3")
+
+menu_layout = [
+    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectogram','Intensity-vs-Frequency-and-time']],
+]
+
 layout = [
+    [sg.Menu(menu_layout)],
     [
         sg.Graph(
             canvas_size=(500, 500),
@@ -31,7 +38,6 @@ layout = [
     ],
 ]
 _VARS["window"] = sg.Window("Mic to Sound Intensity vs Frequency heatmap", layout, finalize=True)
-
 graph = _VARS["window"]["graph"]
 
 # INIT vars:
@@ -41,7 +47,7 @@ INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
 TIMEOUT = 10  # In ms for the event loop
 pAud = pyaudio.PyAudio()
 
-#PySimplyGUI plots:
+# PySimpleGUI plots:
 def drawHeatMapWithLabels(intensity_data):
     graph.erase()  # Clear previous heatmap
     rows, cols = intensity_data.shape
@@ -70,6 +76,7 @@ def stop():
     if _VARS["stream"]:
         _VARS["stream"].stop_stream()
         _VARS["stream"].close()
+        _VARS["stream"] = None
         _VARS["window"]["-PROG-"].update(0)
         _VARS["window"]["Stop"].Update(disabled=True)
         _VARS["window"]["Listen"].Update(disabled=False)
@@ -92,23 +99,41 @@ def listen():
     )
     _VARS["stream"].start_stream()
 
+def close_current_visualizer():
+    if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
+        _VARS["current_visualizer_process"].kill()
+
 # INIT:
+
 def initHeatMap(graph, rate, interval, rows, cols):
+
     # Clear previous drawing
+
     graph.erase()
+
     #Initial setup for the heatmap
+
     for row in range(rows):
+
         graph.DrawText(f"{row * (rate / 2) / rows:.0f} Hz", (105, 100 - row * 100 / rows))
 
+
+
     # Draw labels for time axis
+
     for col in range(cols):
+
         graph.DrawText(f"{col * interval:.1f} sec", (col * 100 / cols, -5))
 
-# Call the initHeatMap function to initialize the heatmap
-rows = 10  # Number of rows in the heatmap
-cols = 10  # Number of columns in the heatmap
-initHeatMap(graph, RATE, INTERVAL, rows, cols)
 
+
+# Call the initHeatMap function to initialize the heatmap
+
+rows = 10  # Number of rows in the heatmap
+
+cols = 10  # Number of columns in the heatmap
+
+initHeatMap(graph, RATE, INTERVAL, rows, cols)
 
 # Function to get heatmap color
 def getHeatMapColor(intensity, threshold=0.0, cmap=None):
@@ -134,28 +159,41 @@ def compute_intensity_data(audio_data, window_size=1024, hop_size=512):
         intensity_data[i, :] = np.abs(np.fft.fft(frame)[:window_size // 2])  # Magnitude spectrum
     return intensity_data
 
-
 # MAIN LOOP
 while True:
     event, values = _VARS["window"].read(timeout=TIMEOUT)
-    if event == "Exit":
+    if event in (sg.WIN_CLOSED, "Exit"):
+        close_current_visualizer()
         stop()
-        pAud.terminate()
-        break
-      # for handling the closing of application
-    if event == sg.WIN_CLOSED :
-        _VARS["stream"].stop_stream()
-        _VARS["stream"].close()
         pAud.terminate()
         break
     if event == "Listen":
         listen()
     if event == "Stop":
         stop()
+    if event == 'Amplitude-Frequency-Visualizer':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
+        _VARS["window"].close()  
+        break 
+    if event == 'Waveform':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
+        _VARS["window"].close()  
+        break 
+    if event == 'Spectogram':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
+        _VARS["window"].close()  
+        break 
+    if event == 'Intensity-vs-Frequency-and-time':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
+        _VARS["window"].close()  
+        break 
 
     # Along with the global audioData variable, this
     # bit updates the waveform plotf
-
     elif _VARS["audioData"].size != 0:
         # Update volume meter
         _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
