@@ -105,7 +105,7 @@ while True:
     # bit updates the waveform plot
 
     elif _VARS["audioData"].size != 0:
-        # Uodate volumne meter
+        # Update volume meter
         _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
         # Redraw plot
         graph.erase()

@@ -48,8 +48,6 @@ try:
 except pyaudio.CoreError as e:
     print(f"Error initializing PyAudio: {e}")
     pAud = None
-# FUNCTIONS:
-
 
 # PySimpleGUI plots:
 def draw_figure(canvas, figure):
@@ -127,3 +125,5 @@ while True:
         ax.set_ylabel("Frequency [Hz]")  # set the y-axis label
         ax.set_xlabel("Time [sec]")  # set the x-axis label
         fig_agg.draw()  # redraw the figure
+
+_VARS["window"].close()

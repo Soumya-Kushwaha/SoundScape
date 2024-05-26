@@ -144,3 +144,11 @@ while True:
         ax.grid(True)  # Enable gridlines
         ax.legend()  # Add a legend
         fig_agg.draw()  # redraw the figure
+
+# Check if the user wants to close the window
+_VARS["window"].close()
+# Clean up the audio stream and terminate PyAudio
+if _VARS["stream"]:
+    _VARS["stream"].stop_stream()
+    _VARS["stream"].close()
+pAud.terminate()

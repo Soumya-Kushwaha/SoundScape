@@ -5,8 +5,6 @@ import scipy.fft
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-"""Realtime Sound Intensity vs Frequency heatmap"""
-
 # VARS CONSTS:
 _VARS = {"window": False, "stream": False, "audioData": np.array([])}
 
@@ -41,7 +39,7 @@ INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
 TIMEOUT = 10  # In ms for the event loop
 pAud = pyaudio.PyAudio()
 
-#PySimplyGUI plots:
+# PySimplyGUI plots:
 def drawHeatMapWithLabels(intensity_data):
     graph.erase()  # Clear previous heatmap
     rows, cols = intensity_data.shape
@@ -92,24 +90,6 @@ def listen():
     )
     _VARS["stream"].start_stream()
 
-# INIT:
-def initHeatMap(graph, rate, interval, rows, cols):
-    # Clear previous drawing
-    graph.erase()
-    #Initial setup for the heatmap
-    for row in range(rows):
-        graph.DrawText(f"{row * (rate / 2) / rows:.0f} Hz", (105, 100 - row * 100 / rows))
-
-    # Draw labels for time axis
-    for col in range(cols):
-        graph.DrawText(f"{col * interval:.1f} sec", (col * 100 / cols, -5))
-
-# Call the initHeatMap function to initialize the heatmap
-rows = 10  # Number of rows in the heatmap
-cols = 10  # Number of columns in the heatmap
-initHeatMap(graph, RATE, INTERVAL, rows, cols)
-
-
 # Function to get heatmap color
 def getHeatMapColor(intensity, threshold=0.0, cmap=None):
     # Default color map
@@ -134,7 +114,6 @@ def compute_intensity_data(audio_data, window_size=1024, hop_size=512):
         intensity_data[i, :] = np.abs(np.fft.fft(frame)[:window_size // 2])  # Magnitude spectrum
     return intensity_data
 
-
 # MAIN LOOP
 while True:
     event, values = _VARS["window"].read(timeout=TIMEOUT)
@@ -142,7 +121,7 @@ while True:
         stop()
         pAud.terminate()
         break
-      # for handling the closing of application
+    # for handling the closing of application
     if event == sg.WIN_CLOSED :
         _VARS["stream"].stop_stream()
         _VARS["stream"].close()
@@ -154,7 +133,7 @@ while True:
         stop()
 
     # Along with the global audioData variable, this
-    # bit updates the waveform plotf
+    # bit updates the waveform plot
 
     elif _VARS["audioData"].size != 0:
         # Update volume meter
