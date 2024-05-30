@@ -1,10 +1,10 @@
-#SoundScape
+# SoundScape
 SoundScape is a Python project that visualizes real-time audio recorded through a microphone, utilizing the PyAudio and PySimpleGUI libraries. It creates a dynamic and interactive soundscape that adapts according to the sound input. This tool enables users to explore the sound properties of different environments, such as a bustling street, a serene park, or a lively classroom.
 
-#Visualizers
+# Visualizers
 SoundScape offers various visualizers to analyze the audio input:
 
-##1. Waveform
+## 1. Waveform
 The Waveform visualizer provides a graphical representation of the audio signal's amplitude over time. It displays the intensity of the sound wave, allowing users to observe the variations in loudness.
 
 ![image](https://github.com/Soumya-Kushwaha/SoundScape/assets/87495134/db464b28-ba01-40bf-a246-eed9f42c49d2)
