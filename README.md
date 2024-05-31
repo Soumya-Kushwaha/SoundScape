@@ -11,7 +11,7 @@ This visualizes the waveform of audio in real time.
 
 <br>
 
-## 2. Spectogram
+## 2. Spectrogram
 
 This visualizes the change in frequency across time.
 
@@ -19,7 +19,7 @@ This visualizes the change in frequency across time.
 
 <br>
 
-## 3. Frequency v/s Amplitude
+## 3. Frequency vs. Amplitude
 
 This visualizes the changes in frequency and amplitude in real time sound.
 
