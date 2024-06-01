@@ -147,10 +147,4 @@ while True:
         # Compute spectrogram
         f, t, Sxx = scipy.signal.spectrogram(_VARS["audioData"], fs=RATE)
         # Plot spectrogram
-        ax.clear()  # clear the previous plot
-        ax.pcolormesh(
-            t, f, Sxx, shading="gouraud"
-        )  # plot the spectrogram as a colored mesh
-        ax.set_ylabel("Frequency [Hz]")  # set the y-axis label
-        ax.set_xlabel("Time [sec]")  # set the x-axis label
-        fig_agg.draw()  # redraw the figure
+    
