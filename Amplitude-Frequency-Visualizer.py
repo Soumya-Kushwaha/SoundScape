@@ -16,14 +16,10 @@ _VARS = {"window": False, "stream": False, "audioData": np.array([]), "audioBuff
 AppFont = "Helvetica"
 sg.theme("DarkBlue3")
 
-menu_layout = [
- 
-    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectogram','Intensity-vs-Frequency-and-time']],
-]
 
 
 layout = [
-    [ sg.Menu(menu_layout)],
+    
     [
        
         sg.Graph(
@@ -35,7 +31,7 @@ layout = [
             tooltip="Frequency graph"  # Tooltip added
         )
     ],
-    [sg.Text("Progress:", text_color='white', font=('Helvetica', 15, 'bold')), sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],  
+    [sg.Text("Progress:", text_color='white', font=('Helvetica', 15, 'bold')), sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-"), ],  
     [
         sg.Button("Listen", font=AppFont, tooltip="Start listening"),
         sg.Button("Pause", font=AppFont, disabled=True, tooltip="Pause listening"), 
@@ -149,26 +145,6 @@ while True:
     if event == "Save":
         save()
 
-    if event == 'Amplitude-Frequency-Visualizer':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Waveform':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Spectogram':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Intensity-vs-Frequency-and-time':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
-        _VARS["window"].close()  
-        break    
     elif _VARS["audioData"].size != 0:
         _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
         yf = scipy.fft.fft(_VARS["audioData"])  

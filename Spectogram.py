@@ -17,12 +17,8 @@ _VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_v
 AppFont = "Any 16"
 sg.theme("DarkBlue3")
 
-menu_layout = [
-    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']],
-]
 
 layout = [
-    [sg.Menu(menu_layout)],
     [
         sg.Graph(
             canvas_size=(500, 500),
@@ -117,27 +113,6 @@ while True:
 
     if event == "Stop":
         stop()
-
-    if event == 'Amplitude-Frequency-Visualizer':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Waveform':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Spectogram':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Intensity-vs-Frequency-and-time':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
-        _VARS["window"].close()  
-        break 
     
  # Along with the global audioData variable, this
     # bit updates the spectrogram plot
