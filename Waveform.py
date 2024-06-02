@@ -4,17 +4,30 @@ import numpy as np
 import subprocess
 
 """ RealTime Audio Waveform plot """
-# VARS CONSTS:
-_VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_visualizer_process": None}
 
-# PySimpleGUI INIT:
-AppFont = "Any 16"
+# Constants and Variables
+_VARS = {
+    "window": None,
+    "stream": None,
+    "audioData": np.array([]),
+    "current_visualizer_process": None
+}
+
+# PySimpleGUI Initialization
+APP_FONT = "Any 16"
 sg.theme("DarkBlue3")
 
+# Menu Layout
 menu_layout = [
-    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']],
+    ['Run Visualizers', [
+        'Amplitude-Frequency-Visualizer', 
+        'Waveform', 
+        'Spectrogram', 
+        'Intensity-vs-Frequency-and-time']
+    ]
 ]
 
+# Main Layout
 layout = [
     [sg.Menu(menu_layout)],
     [
@@ -28,126 +41,102 @@ layout = [
     ],
     [sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
     [
-        sg.Button("Listen", font=AppFont),
-        sg.Button("Stop", font=AppFont, disabled=True),
-        sg.Button("Exit", font=AppFont),
+        sg.Button("Listen", font=APP_FONT),
+        sg.Button("Stop", font=APP_FONT, disabled=True),
+        sg.Button("Exit", font=APP_FONT),
     ],
 ]
+
+# Initialize Window
 _VARS["window"] = sg.Window("Mic to waveform plot + Max Level", layout, finalize=True)
 graph = _VARS["window"]["graph"]
 
-# INIT vars:
-CHUNK = 1024  # Samples: 1024,  512, 256, 128
-RATE = 44100  # Equivalent to Human Hearing at 40 kHz
-INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
-TIMEOUT = 10  # In ms for the event loop
-pAud = pyaudio.PyAudio()
+# Audio Parameters
+CHUNK = 1024
+RATE = 44100
+INTERVAL = 1
+TIMEOUT = 10
 
+# Initialize PyAudio
+pAud = pyaudio.PyAudio()
 try:
     pAud.get_device_info_by_index(0)
 except pyaudio.CoreError as e:
     print(f"Error initializing PyAudio: {e}")
     pAud = None
 
-# PySimpleGUI plots:
-def drawAxis(dataRangeMin=0, dataRangeMax=100):
-
-    # Y Axis
-
+# Function to draw axes
+def draw_axes(data_range_min=0, data_range_max=100):
     graph.DrawLine((0, 50), (100, 50))
+    graph.DrawLine((0, data_range_min), (0, data_range_max))
 
-    # X Axis
-
-    graph.DrawLine((0, dataRangeMin), (0, dataRangeMax))
-
-# pyaudio stream:
-def stop():
+# Function to stop audio stream
+def stop_stream():
     if _VARS["stream"]:
         _VARS["stream"].stop_stream()
         _VARS["stream"].close()
         _VARS["stream"] = None
         _VARS["window"]["-PROG-"].update(0)
-        _VARS["window"]["Stop"].Update(disabled=True)
-        _VARS["window"]["Listen"].Update(disabled=False)
+        _VARS["window"]["Stop"].update(disabled=True)
+        _VARS["window"]["Listen"].update(disabled=False)
 
-# callback:
-def callback(in_data, frame_count, time_info, status):
+# PyAudio callback function
+def audio_callback(in_data, frame_count, time_info, status):
     _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
     return (in_data, pyaudio.paContinue)
 
-def listen():
-    _VARS["window"]["Stop"].Update(disabled=False)
-    _VARS["window"]["Listen"].Update(disabled=True)
+# Function to start listening to audio
+def start_listening():
+    _VARS["window"]["Stop"].update(disabled=False)
+    _VARS["window"]["Listen"].update(disabled=True)
     _VARS["stream"] = pAud.open(
         format=pyaudio.paInt16,
         channels=1,
         rate=RATE,
         input=True,
         frames_per_buffer=CHUNK,
-        stream_callback=callback,
+        stream_callback=audio_callback,
     )
     _VARS["stream"].start_stream()
 
-def close_current_visualizer():
+# Function to close the current visualizer process
+def close_visualizer():
     if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
         _VARS["current_visualizer_process"].terminate()
         _VARS["current_visualizer_process"].wait()
         _VARS["current_visualizer_process"] = None
 
-# INIT:
-drawAxis()
+# Initialize plot
+draw_axes()
 
-# MAIN LOOP
+# Main Event Loop
 while True:
+    event, _ = _VARS["window"].read(timeout=TIMEOUT)
     
-    event, values = _VARS["window"].read(timeout=TIMEOUT)
     if event in (sg.WIN_CLOSED, "Exit"):
-        close_current_visualizer()
-        stop()
+        close_visualizer()
+        stop_stream()
         pAud.terminate()
         break
 
     if event == "Listen":
-        listen()
+        start_listening()
 
     if event == "Stop":
-        stop()
+        stop_stream()
 
-    if event == 'Amplitude-Frequency-Visualizer':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
-        _VARS["window"].close()  
-        break  
-    if event == 'Waveform':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
-        _VARS["window"].close()  
-        break  
-    if event == 'Spectrogram':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Intensity-vs-Frequency-and-time':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
-        _VARS["window"].close()  
-        break 
+    if event in ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']:
+        close_visualizer()
+        script_name = event.replace(' ', '-').lower() + '.py'
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', script_name])
+        _VARS["window"].close()
+        break
 
-    # Along with the global audioData variable, this bit updates the waveform plot
+    # Update the waveform plot
     elif _VARS["audioData"].size != 0:
-        # Update volume meter
         _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
-        # Redraw plot
         graph.erase()
-        drawAxis()
-
-        
-        # Here we go through the points in the audioData object and draw them
-
-        # Note that we are rescaling ( dividing by 100 ) and centering (+50)
-
-        # try different values to get a feel for what they do.
+        draw_axes()
         for x in range(CHUNK):
             graph.DrawCircle(
                 (x, (_VARS["audioData"][x] / 100) + 50),
