@@ -55,7 +55,7 @@ while True:
 
     if event == "Spectrogram":
         close_current_visualizer(current_visualizer_process)
-        current_visualizer_process = subprocess.Popen(['python', 'Spectrogram.py'])
+        current_visualizer_process = subprocess.Popen(['python', 'spectogram.py'])
         window.close()
         break
 
