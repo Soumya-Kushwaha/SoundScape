@@ -27,7 +27,7 @@ pip install -r requirements.txt
 ## Running the project
 *Soundscape consists of multiple files with different use cases:*
 
-### Files can be used directly from their source code or eveyting can be accesed from gui_final.py
+### Files can be used directly from their source code or eveyting can be accesed from Index.py
 
 ### 1. Waveform
 This file simply visualizes the waveform of audio detected in real time. To view the waveform, run the code:
