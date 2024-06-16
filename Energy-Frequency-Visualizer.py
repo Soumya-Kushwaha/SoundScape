@@ -7,7 +7,7 @@ import scipy.fft
 import matplotlib.pyplot as plt
 import subprocess
 
-# VARS CONSTS:
+# vars:
 _VARS = {
     "window": None,
     "stream": None,
