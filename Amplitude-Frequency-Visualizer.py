@@ -98,9 +98,12 @@ def save():
         sg.popup('Success', f'Audio saved as {folder}/output.wav')
 
 def callback(in_data, frame_count, time_info, status):
-    _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
-    _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], _VARS["audioData"])
+    global _VARS
+    audio_data = np.frombuffer(in_data, dtype=np.int16)
+    _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], audio_data)
+    _VARS["audioData"] = audio_data  
     return (in_data, pyaudio.paContinue)
+
 
 def listen():
     _VARS["window"]["Stop"].Update(disabled=False)
