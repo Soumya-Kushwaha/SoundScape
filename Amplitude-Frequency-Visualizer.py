@@ -5,16 +5,27 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import soundfile as sf
 import scipy.fft
 import matplotlib.pyplot as plt
+import subprocess
 
 # VARS CONSTS:
-_VARS = {"window": False, "stream": False, "audioData": np.array([]), "audioBuffer": np.array([])}
+
+
+_VARS = {"window": False, "stream": False, "audioData": np.array([]), "audioBuffer": np.array([]),"current_visualizer_process": None}
 
 # pysimpleGUI INIT:
 AppFont = "Helvetica"
 sg.theme("DarkBlue3")
 
+menu_layout = [
+ 
+    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectogram','Intensity-vs-Frequency-and-time']],
+]
+
+
 layout = [
+    [ sg.Menu(menu_layout)],
     [
+       
         sg.Graph(
             canvas_size=(600, 600),
             graph_bottom_left=(-2, -2),
@@ -57,9 +68,11 @@ def stop():
     if _VARS["stream"]:
         _VARS["stream"].stop_stream()
         _VARS["stream"].close()
+        _VARS["stream"] = None
         _VARS["window"]["-PROG-"].update(0)
         _VARS["window"]["Stop"].Update(disabled=True)
         _VARS["window"]["Listen"].Update(disabled=False)
+ 
 
 def pause():
     if _VARS["stream"].is_active():
@@ -85,9 +98,12 @@ def save():
         sg.popup('Success', f'Audio saved as {folder}/output.wav')
 
 def callback(in_data, frame_count, time_info, status):
-    _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
-    _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], _VARS["audioData"])
+    global _VARS
+    audio_data = np.frombuffer(in_data, dtype=np.int16)
+    _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], audio_data)
+    _VARS["audioData"] = audio_data  
     return (in_data, pyaudio.paContinue)
+
 
 def listen():
     _VARS["window"]["Stop"].Update(disabled=False)
@@ -102,6 +118,10 @@ def listen():
     )
     _VARS["stream"].start_stream()
 
+def close_current_visualizer():
+    if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
+        _VARS["current_visualizer_process"].kill()
+
 # INIT:
 fig, ax = plt.subplots()  # create a figure and an axis object
 fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
@@ -115,8 +135,9 @@ while True:
         break
     # for handling the closing of application
     if event == sg.WIN_CLOSED :
-        _VARS["stream"].stop_stream()
-        _VARS["stream"].close()
+        if _VARS["stream"]:
+            _VARS["stream"].stop_stream()
+            _VARS["stream"].close()
         pAud.terminate()
         break
     if event == "Listen":
@@ -131,6 +152,26 @@ while True:
     if event == "Save":
         save()
 
+    if event == 'Amplitude-Frequency-Visualizer':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
+        _VARS["window"].close()  
+        break 
+    if event == 'Waveform':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
+        _VARS["window"].close()  
+        break 
+    if event == 'Spectogram':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
+        _VARS["window"].close()  
+        break 
+    if event == 'Intensity-vs-Frequency-and-time':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
+        _VARS["window"].close()  
+        break    
     elif _VARS["audioData"].size != 0:
         _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
         yf = scipy.fft.fft(_VARS["audioData"])  
