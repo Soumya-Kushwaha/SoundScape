@@ -9,8 +9,8 @@ import subprocess
 
 # VARS CONSTS:
 _VARS = {
-    "window": False,
-    "stream": False,
+    "window": None,
+    "stream": None,
     "audioData": np.array([]),
     "audioBuffer": np.array([]),
     "current_visualizer_process": None,
@@ -21,7 +21,7 @@ AppFont = "Helvetica"
 sg.theme("DarkBlue3")
 
 menu_layout = [
-    ['Run Visualizers', ['Energy-Frequency-Visualizer', 'Waveform', 'Spectogram', 'Intensity-vs-Frequency-and-time']],
+    ['Run Visualizers', ['Energy-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']],
 ]
 
 layout = [
@@ -53,7 +53,6 @@ graph = _VARS["window"]["graph"]
 # INIT vars:
 CHUNK = 1024
 RATE = 44100
-INTERVAL = 1
 TIMEOUT = 10
 pAud = pyaudio.PyAudio()
 
@@ -78,13 +77,13 @@ def stop():
         _VARS["window"]["Save"].Update(disabled=True)
 
 def pause():
-    if _VARS["stream"].is_active():
+    if _VARS["stream"] and _VARS["stream"].is_active():
         _VARS["stream"].stop_stream()
         _VARS["window"]["Pause"].Update(disabled=True)
         _VARS["window"]["Resume"].Update(disabled=False)
 
 def resume():
-    if not _VARS["stream"].is_active():
+    if _VARS["stream"] and not _VARS["stream"].is_active():
         _VARS["stream"].start_stream()
         _VARS["window"]["Pause"].Update(disabled=False)
         _VARS["window"]["Resume"].Update(disabled=True)
@@ -92,10 +91,20 @@ def resume():
 def save():
     folder = sg.popup_get_folder('Please select a directory to save the files')
     if folder:
-        fig.savefig(f'{folder}/output.png')
-        sg.popup('Success', f'Image saved as {folder}/output.png')
-        sf.write(f'{folder}/output.wav', _VARS["audioBuffer"], RATE)
-        sg.popup('Success', f'Audio saved as {folder}/output.wav')
+        try:
+            # Save the plot as an image file
+            fig.savefig(f'{folder}/output.png')
+            sg.popup('Success', f'Image saved as {folder}/output.png')
+
+            # Save the audio data as a WAV file
+            sf.write(f'{folder}/output.wav', _VARS["audioBuffer"], RATE)
+            sg.popup('Success', f'Audio saved as {folder}/output.wav')
+        except FileNotFoundError as fnf_error:
+            sg.popup_error('File Not Found Error', f'The specified path was not found: {fnf_error}')
+        except PermissionError as perm_error:
+            sg.popup_error('Permission Error', f'Permission denied: {perm_error}')
+        except Exception as e:
+            sg.popup_error('Error saving files', str(e))
 
 def callback(in_data, frame_count, time_info, status):
     _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
@@ -103,18 +112,21 @@ def callback(in_data, frame_count, time_info, status):
     return (in_data, pyaudio.paContinue)
 
 def listen():
-    _VARS["window"]["Stop"].Update(disabled=False)
-    _VARS["window"]["Listen"].Update(disabled=True)
-    _VARS["window"]["Pause"].Update(disabled=False)
-    _VARS["stream"] = pAud.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=RATE,
-        input=True,
-        frames_per_buffer=CHUNK,
-        stream_callback=callback,
-    )
-    _VARS["stream"].start_stream()
+    try:
+        _VARS["window"]["Stop"].Update(disabled=False)
+        _VARS["window"]["Listen"].Update(disabled=True)
+        _VARS["window"]["Pause"].Update(disabled=False)
+        _VARS["stream"] = pAud.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=RATE,
+            input=True,
+            frames_per_buffer=CHUNK,
+            stream_callback=callback,
+        )
+        _VARS["stream"].start_stream()
+    except Exception as e:
+        sg.popup_error('Error starting the stream', str(e))
 
 def close_current_visualizer():
     if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
@@ -129,6 +141,8 @@ while True:
     event, values = _VARS["window"].read(timeout=TIMEOUT)
     if event in (sg.WIN_CLOSED, "Exit"):
         stop()
+        if _VARS["current_visualizer_process"]:
+            close_current_visualizer()
         pAud.terminate()
         break
     if event == "Listen":
@@ -141,9 +155,12 @@ while True:
         stop()
     if event == "Save":
         save()
-    if event in ['Energy-Frequency-Visualizer', 'Waveform', 'Spectogram', 'Intensity-vs-Frequency-and-time']:
+    if event in ['Energy-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']:
         close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', f'{event}.py'])
+        try:
+            _VARS["current_visualizer_process"] = subprocess.Popen(['python', f'{event}.py'])
+        except Exception as e:
+            sg.popup_error('Error running visualizer', str(e))
         _VARS["window"].close()
         break
     elif _VARS["audioData"].size != 0:
