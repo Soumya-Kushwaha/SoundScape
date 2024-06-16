@@ -139,9 +139,9 @@ while True:
         _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
         _VARS["window"].close()  
         break 
-    if event == 'Spectrogram':
+    if event == 'Spectogram':
         close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectrogram.py'])
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
         _VARS["window"].close()  
         break 
     if event == 'Intensity-vs-Frequency-and-time':
