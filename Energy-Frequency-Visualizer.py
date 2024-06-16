@@ -21,7 +21,7 @@ AppFont = "Helvetica"
 sg.theme("DarkBlue3")
 
 menu_layout = [
-    ['Run Visualizers', ['Energy-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']],
+    ['Run Visualizers', ['Energy-Frequency-Visualizer', 'Waveform', 'Spectogram', 'Intensity-vs-Frequency-and-time']],
 ]
 
 layout = [
@@ -155,7 +155,7 @@ while True:
         stop()
     if event == "Save":
         save()
-    if event in ['Energy-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']:
+    if event in ['Energy-Frequency-Visualizer', 'Waveform', 'Spectogram', 'Intensity-vs-Frequency-and-time']:
         close_current_visualizer()
         try:
             _VARS["current_visualizer_process"] = subprocess.Popen(['python', f'{event}.py'])
