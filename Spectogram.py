@@ -3,8 +3,8 @@ import pyaudio
 import numpy as np
 import scipy.signal
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-# gui-performance-enhancement
+from matplotlib.backends.backend_tkagg 
+import FigureCanvasTkAgg
 import threading
 import queue
 import subprocess
@@ -17,7 +17,7 @@ _VARS = {"window": None, "stream": None, "audioData": np.array([])}
 audio_buffer = queue.Queue(maxsize=10)  # Buffer for audio data
 stop_event = threading.Event()  # Event to signal stopping of the audio stream
 
- gui-performance-enhancement
+ 
 # PySimpleGUI initialization
 # VARS CONSTS:
 _VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_visualizer_process": None}
@@ -25,9 +25,7 @@ _VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_v
 # pysimpleGUI INIT:
 AppFont = "Any 16"
 sg.theme("DarkBlue3")
-
-menu_layout = [
-    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']],
+Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']],
 ]
 
 layout = [
@@ -49,7 +47,6 @@ layout = [
     ],
 ]
 _VARS["window"] = sg.Window("Mic to spectrogram plot + Max Level", layout, finalize=True)
- gui-performance-enhancement
 graph = _VARS["window"]["graph"]
 
 # PyAudio initialization
@@ -66,7 +63,6 @@ def stop():
         _VARS["stream"].close()
         _VARS["stream"] = None
         _VARS["window"]["-PROG-"].update(0)
- gui-performance-enhancement
         _VARS["window"]["Stop"].update(disabled=True)
         _VARS["window"]["Listen"].update(disabled=False)
         stop_event.clear()  # Reset the event for the next use
@@ -96,7 +92,7 @@ def listen():
     )
     _VARS["stream"].start_stream()
 
- gui-performance-enhancement
+ 
 def audio_processing(ax, fig_agg):
     while not stop_event.is_set():
         try:
