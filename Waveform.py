@@ -38,6 +38,7 @@ INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
 TIMEOUT = 10  # In ms for the event loop
 pAud = pyaudio.PyAudio()
 
+
 # FUNCTIONS:
 
 
@@ -82,7 +83,6 @@ def listen():
 # INIT:
 drawAxis()
 
-
 # MAIN LOOP
 while True:
     event, values = _VARS["window"].read(timeout=TIMEOUT)
@@ -116,6 +116,5 @@ while True:
                 line_color="blue",
                 fill_color="blue",
             )
-
 
 _VARS["window"].close()

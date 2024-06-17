@@ -48,6 +48,8 @@ try:
 except pyaudio.CoreError as e:
     print(f"Error initializing PyAudio: {e}")
     pAud = None
+
+
 # FUNCTIONS:
 
 
