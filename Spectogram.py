@@ -36,6 +36,7 @@ layout = [
     [
         sg.Button("Listen", font=AppFont),
         sg.Button("Stop", font=AppFont, disabled=True),
+        sg.Button("Save", font=AppFont, disabled=True),
         sg.Button("Exit", font=AppFont),
     ],
 ]
@@ -55,6 +56,8 @@ except pyaudio.CoreError as e:
     print(f"Error initializing PyAudio: {e}")
     pAud = None
 
+# FUNCTIONS:
+
 # PySimpleGUI plots:
 def draw_figure(canvas, figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
@@ -72,6 +75,7 @@ def stop():
         _VARS["window"]["-PROG-"].update(0)
         _VARS["window"]["Stop"].Update(disabled=True)
         _VARS["window"]["Listen"].Update(disabled=False)
+        _VARS["window"]["Save"].Update(disabled=True)
 
 # callback:
 def callback(in_data, frame_count, time_info, status):
@@ -81,6 +85,7 @@ def callback(in_data, frame_count, time_info, status):
 def listen():
     _VARS["window"]["Stop"].Update(disabled=False)
     _VARS["window"]["Listen"].Update(disabled=True)
+    _VARS["window"]["Save"].Update(disabled=False)
     _VARS["stream"] = pAud.open(
         format=pyaudio.paInt16,
         channels=1,
@@ -95,6 +100,11 @@ def close_current_visualizer():
     if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
         _VARS["current_visualizer_process"].kill()
 
+def save_spectrogram():
+    file_path = sg.popup_get_file('Save as', save_as=True, no_window=True, file_types=(("PNG Files", "*.png"), ("All Files", "*.*")))
+    if file_path:
+        fig.savefig(file_path)
+        sg.popup("File saved!", title="Success")
 
 # INIT:
 fig, ax = plt.subplots()  # create a figure and an axis object
@@ -115,6 +125,9 @@ while True:
 
     if event == "Stop":
         stop()
+
+    if event == "Save":
+        save_spectrogram()
 
     if event == 'Amplitude-Frequency-Visualizer':
         close_current_visualizer()
