@@ -1,7 +1,0 @@
-numpy
-matplotlib
-scipy
-PyAudio
-PySimpleGUI
-sounddevice
-soundfile
