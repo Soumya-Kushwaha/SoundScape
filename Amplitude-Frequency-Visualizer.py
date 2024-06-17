@@ -187,5 +187,5 @@ while True:
             ax.legend()  # Add a legend
             fig_agg.draw()  # redraw the figure
         except Exception as e:
-            print("Error in updating plot:", e)
+            print("Error during plotting:", e)
             traceback.print_exc()
