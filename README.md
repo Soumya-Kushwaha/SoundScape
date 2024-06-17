@@ -1,37 +1,67 @@
-# SoundScape
-SoundScape is a Python project that visualizes the real-time audio recorded through a microphone, using the PyAudio and PySimpleGUI libraries. It creates a dynamic and interactive soundscape that changes according to the sound input. You can use it to explore the sound properties of different environments, such as a busy street, a quiet park, or a noisy classroom.
+# 🎵 SoundScape 🎵
 
-*SoundScape has different visualizers. Let's learn about them:*
+Welcome to **SoundScape**! Dive into the world of real-time sound visualization and transform your audio experiences into stunning visual displays.
 
-## 1. Waveform
+## 🌟 Features
 
-This visualizes the waveform of audio in real time.
+- 🎨 **Diverse Visualizers**: Explore various visual styles that adapt to your audio.
+- ⚙️ **Customization**: Fine-tune colors, shapes, and parameters to suit your needs.
+- 🕒 **Real-Time Audio Processing**: Get instant visual feedback from live audio or files.
+- 💻 **User-Friendly Interface**: Intuitive controls make it easy for anyone to use.
+- 🎧 **Audio Source Flexibility**: Supports both microphone input and audio file playback.
 
-![image](https://github.com/Soumya-Kushwaha/SoundScape/assets/87495134/db464b28-ba01-40bf-a246-eed9f42c49d2)
+## 🚀 Getting Started
 
-<br>
+### Prerequisites
 
-## 2. Spectogram
+- Python 3.x
+- Install dependencies:
+  ```sh
+  pip install -r requirements.txt
+  ```
 
-This visualizes the change in frequency across time.
+### Installation
+#### 1. Clone the Repo:
+  ```sh
+  git clone https://github.com/Soumya-Kushwaha/SoundScape.git
+  cd SoundScape
+  ```
 
-![image](https://github.com/Soumya-Kushwaha/SoundScape/assets/87495134/a346cd22-9bd4-4d6e-b700-a419ab842703)
+#### 2. Run SoundScape:
+  ```sh
+  python mainLanding.py
+  ```
 
-<br>
+## 🎛️ Usage Example
+  ```python
+  from visualizers import WaveformVisualizer
 
-## 3. Frequency v/s Amplitude
+  visualizer = WaveformVisualizer()
+  visualizer.start()
+  ```
 
-This visualizes the changes in frequency and amplitude in real time sound.
+## 🎯 Purpose and Vision
+SoundScape was created to provide a visually engaging way to experience sound. Whether you're a musician looking to visualize your creations, an educator demonstrating sound properties, or just an enthusiast, SoundScape offers an interactive and immersive tool to enhance your audio experience.
 
-![image](https://github.com/Soumya-Kushwaha/SoundScape/assets/87495134/725fe4a1-4d1a-4a2d-819b-703b6d11047d)
+## 🌱 Future Contributions
+We envision SoundScape as a growing project with endless possibilities. Here are some ways you can contribute:
 
-<br>
+- **New Visualizers:** Develop and share unique visualizers.
+- **Feature Enhancements:** Improve customization options, add new settings, and enhance performance.
+- **Bug Fixes:** Help us identify and resolve issues to improve stability.
+- **Documentation:** Enhance and expand the project documentation.
 
-# Usage
-To use SoundScape, you need to install the requirements from ```requirements.txt```, and run different visualizers. You can interact with the soundscape using your microphone. For more details, please refer to the ```Installation.md``` file.
+## 🤝 How to Contribute
+We welcome contributions! Here’s how you can get involved:
 
-# Contribution Guidelines
-Please refer to the ```Contributing.md``` for details.
+1. Fork the repository.
+2. Create a new branch **(`git checkout -b feature-branch`)**.
+3. Make your changes.
+4. Commit your changes **(`git commit -m 'Add new feature'`)**.
+5. Push to the branch **(`git push origin feature-branch`)**.
+6. Open a Pull Request.
 
-# References
-Please refer to the ```References.md``` for details.
+For more details, check out our [contributing guidelines](https://github.com/Soumya-Kushwaha/SoundScape/blob/main/Contribution.md).
+
+## 📬 Contact
+For inquiries, reach out to [Soumya Kushwaha](kushsoumya30@gmail.com).

@@ -5,15 +5,29 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import soundfile as sf
 import scipy.fft
 import matplotlib.pyplot as plt
+import subprocess
+import traceback
 
 # VARS CONSTS:
-_VARS = {"window": False, "stream": False, "audioData": np.array([]), "audioBuffer": np.array([])}
 
-# pysimpleGUI INIT:
-AppFont = "Any 16"
+_VARS = {
+    "window": False,
+    "stream": False,
+    "audioData": np.array([]),
+    "audioBuffer": np.array([]),
+    "current_visualizer_process": None,
+}
+
+# PySimpleGUI INIT:
+AppFont = "Helvetica"
 sg.theme("DarkBlue3")
 
+menu_layout = [
+    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectogram', 'Intensity-vs-Frequency-and-time']],
+]
+
 layout = [
+    [sg.Menu(menu_layout)],
     [
         sg.Graph(
             canvas_size=(600, 600),
@@ -21,16 +35,17 @@ layout = [
             graph_top_right=(102, 102),
             background_color="#809AB6",
             key="graph",
+            tooltip="Frequency graph"  # Tooltip added
         )
     ],
-    [sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
+    [sg.Text("Progress:", text_color='white', font=('Helvetica', 15, 'bold')), sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
     [
-        sg.Button("Listen", font=AppFont),
-        sg.Button("Pause", font=AppFont, disabled=True),
-        sg.Button("Resume", font=AppFont, disabled=True),
-        sg.Button("Stop", font=AppFont, disabled=True),
-        sg.Button("Save", font=AppFont, disabled=True),
-        sg.Button("Exit", font=AppFont),
+        sg.Button("Listen", font=AppFont, tooltip="Start listening"),
+        sg.Button("Pause", font=AppFont, disabled=True, tooltip="Pause listening"),
+        sg.Button("Resume", font=AppFont, disabled=True, tooltip="Resume listening"),
+        sg.Button("Stop", font=AppFont, disabled=True, tooltip="Stop listening"),
+        sg.Button("Save", font=AppFont, disabled=True, tooltip="Save the plot"),
+        sg.Button("Exit", font=AppFont, tooltip="Exit the application"),
     ],
 ]
 
@@ -56,18 +71,19 @@ def stop():
     if _VARS["stream"]:
         _VARS["stream"].stop_stream()
         _VARS["stream"].close()
+        _VARS["stream"] = None
         _VARS["window"]["-PROG-"].update(0)
         _VARS["window"]["Stop"].Update(disabled=True)
         _VARS["window"]["Listen"].Update(disabled=False)
 
 def pause():
-    if _VARS["stream"].is_active():
+    if _VARS["stream"] and _VARS["stream"].is_active():
         _VARS["stream"].stop_stream()
         _VARS["window"]["Pause"].Update(disabled=True)
         _VARS["window"]["Resume"].Update(disabled=False)
 
 def resume():
-    if not _VARS["stream"].is_active():
+    if _VARS["stream"] and not _VARS["stream"].is_active():
         _VARS["stream"].start_stream()
         _VARS["window"]["Pause"].Update(disabled=False)
         _VARS["window"]["Resume"].Update(disabled=True)
@@ -84,22 +100,33 @@ def save():
         sg.popup('Success', f'Audio saved as {folder}/output.wav')
 
 def callback(in_data, frame_count, time_info, status):
-    _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
-    _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], _VARS["audioData"])
+    try:
+        _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
+        _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], _VARS["audioData"])
+    except Exception as e:
+        print("Error in callback:", e)
+        traceback.print_exc()
     return (in_data, pyaudio.paContinue)
 
 def listen():
-    _VARS["window"]["Stop"].Update(disabled=False)
-    _VARS["window"]["Listen"].Update(disabled=True)
-    _VARS["stream"] = pAud.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=RATE,
-        input=True,
-        frames_per_buffer=CHUNK,
-        stream_callback=callback,
-    )
-    _VARS["stream"].start_stream()
+    try:
+        _VARS["window"]["Stop"].Update(disabled=False)
+        _VARS["window"]["Listen"].Update(disabled=True)
+        _VARS["stream"] = pAud.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=RATE,
+            input=True,
+            frames_per_buffer=CHUNK,
+            stream_callback=callback,
+        )
+        _VARS["stream"].start_stream()
+    except Exception as e:
+        sg.popup_error(f"Error: {e}")
+
+def close_current_visualizer():
+    if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
+        _VARS["current_visualizer_process"].kill()
 
 # INIT:
 fig, ax = plt.subplots()  # create a figure and an axis object
@@ -108,7 +135,7 @@ fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
 # MAIN LOOP
 while True:
     event, values = _VARS["window"].read(timeout=TIMEOUT)
-    if event == sg.WIN_CLOSED or event == "Exit":
+    if event == "Exit" or event == sg.WIN_CLOSED:
         stop()
         pAud.terminate()
         break
@@ -124,16 +151,41 @@ while True:
     if event == "Save":
         save()
 
+    if event == 'Amplitude-Frequency-Visualizer':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
+        _VARS["window"].close()
+        break 
+    if event == 'Waveform':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
+        _VARS["window"].close()
+        break 
+    if event == 'Spectogram':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
+        _VARS["window"].close()
+        break 
+    if event == 'Intensity-vs-Frequency-and-time':
+        close_current_visualizer()
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
+        _VARS["window"].close()
+        break    
     elif _VARS["audioData"].size != 0:
-        _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
-        yf = scipy.fft.fft(_VARS["audioData"])  
-        xf = np.linspace(0.0, RATE / 2, CHUNK // 2)  
-        ax.clear()  
-        ax.plot(
-            xf, 2.0 / CHUNK * np.abs(yf[: CHUNK // 2]), label='Frequency Spectrum'
-        )  
-        ax.set_ylabel("Amplitude")  
-        ax.set_xlabel("Frequency [Hz]")  
-        ax.grid(True)  # Enable gridlines
-        ax.legend()  # Add a legend
-        fig_agg.draw()  # redraw the figure
+        try:
+            _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
+            yf = scipy.fft.fft(_VARS["audioData"])  
+            xf = np.linspace(0.0, RATE / 2, CHUNK // 2)  
+            ax.clear()  
+            ax.plot(
+                xf, 2.0 / CHUNK * np.abs(yf[: CHUNK // 2]), label='Frequency Spectrum'
+            )  
+            ax.set_title("Frequency Spectrum")  # Add this line to set the title
+            ax.set_ylabel("Amplitude")  
+            ax.set_xlabel("Frequency [Hz]")  
+            ax.grid(True)  # Enable gridlines
+            ax.legend()  # Add a legend
+            fig_agg.draw()  # redraw the figure
+        except Exception as e:
+            print("Error during plotting:", e)
+            traceback.print_exc()
