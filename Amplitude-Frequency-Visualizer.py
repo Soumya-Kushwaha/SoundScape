@@ -27,7 +27,7 @@ menu_layout = [
 ]
 
 layout = [
-    [sg.Menu(menu_layout)],  # This line was added from the other branch
+    [sg.Menu(menu_layout)],
     [
         sg.Graph(
             canvas_size=(600, 600),
@@ -38,10 +38,7 @@ layout = [
             tooltip="Frequency graph"  # Tooltip added
         )
     ],
-  [
-        sg.Text("Progress:", text_color='white', font=('Helvetica', 15, 'bold')),
-        sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-"),
-    ],
+    [sg.Text("Progress:", text_color='white', font=('Helvetica', 15, 'bold')), sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
     [
         sg.Button("Listen", font=AppFont, tooltip="Start listening"),
         sg.Button("Pause", font=AppFont, disabled=True, tooltip="Pause listening"),
