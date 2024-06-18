@@ -17,8 +17,12 @@ _VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_v
 AppFont = "Any 16"
 sg.theme("DarkBlue3")
 
+menu_layout = [
+    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']],
+]
 
 layout = [
+    [sg.Menu(menu_layout)],
     [
         sg.Graph(
             canvas_size=(500, 500),
@@ -31,8 +35,8 @@ layout = [
     [sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
     [
         sg.Button("Listen", font=AppFont),
-        sg.Button("Save", font=AppFont, disabled=True, tooltip="Save the plot"),
         sg.Button("Stop", font=AppFont, disabled=True),
+        sg.Button("Save", font=AppFont, disabled=True),
         sg.Button("Exit", font=AppFont),
     ],
 ]
@@ -51,8 +55,8 @@ try:
 except pyaudio.CoreError as e:
     print(f"Error initializing PyAudio: {e}")
     pAud = None
-# FUNCTIONS:
 
+# FUNCTIONS:
 
 # PySimpleGUI plots:
 def draw_figure(canvas, figure):
@@ -71,6 +75,7 @@ def stop():
         _VARS["window"]["-PROG-"].update(0)
         _VARS["window"]["Stop"].Update(disabled=True)
         _VARS["window"]["Listen"].Update(disabled=False)
+        _VARS["window"]["Save"].Update(disabled=True)
 
 # callback:
 def callback(in_data, frame_count, time_info, status):
@@ -80,6 +85,7 @@ def callback(in_data, frame_count, time_info, status):
 def listen():
     _VARS["window"]["Stop"].Update(disabled=False)
     _VARS["window"]["Listen"].Update(disabled=True)
+    _VARS["window"]["Save"].Update(disabled=False)
     _VARS["stream"] = pAud.open(
         format=pyaudio.paInt16,
         channels=1,
@@ -94,19 +100,12 @@ def close_current_visualizer():
     if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
         _VARS["current_visualizer_process"].kill()
 
-
-import soundfile as sf
-
 def save_spectrogram():
-    # Ask the user for a directory to save the image file
-    folder = sg.popup_get_folder('Please select a directory to save the files')
-    if folder:
-        # Save the figure as an image file
-        fig.savefig(f'{folder}/output.png')
-        sg.popup('Success', f'Image saved as {folder}/output.png')
-        # Save the recorded audio data to a file
-        sf.write(f'{folder}/output.wav', _VARS["audioBuffer"], RATE)
-        sg.popup('Success', f'Audio saved as {folder}/output.wav')
+    file_path = sg.popup_get_file('Save as', save_as=True, no_window=True, file_types=(("PNG Files", "*.png"), ("All Files", "*.*")))
+    if file_path:
+        fig.savefig(file_path)
+        sg.popup("File saved!", title="Success")
+
 # INIT:
 fig, ax = plt.subplots()  # create a figure and an axis object
 fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
@@ -166,3 +165,5 @@ while True:
         ax.set_ylabel("Frequency [Hz]")  # set the y-axis label
         ax.set_xlabel("Time [sec]")  # set the x-axis label
         fig_agg.draw()  # redraw the figure
+
+_VARS["window"].close()

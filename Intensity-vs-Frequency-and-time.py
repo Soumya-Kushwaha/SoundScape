@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import subprocess
 
-
 """Realtime Sound Intensity vs Frequency heatmap"""
+
 # VARS CONSTS:
 _VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_visualizer_process": None}
 
@@ -164,13 +164,19 @@ while True:
         stop()
         pAud.terminate()
         break
+    # for handling the closing of application
+    if event == sg.WIN_CLOSED :
+        _VARS["stream"].stop_stream()
+        _VARS["stream"].close()
+        pAud.terminate()
+        break
     if event == "Listen":
         listen()
     if event == "Stop":
         stop()
         
     # Along with the global audioData variable, this
-    # bit updates the waveform plotf
+    # bit updates the waveform plot
     elif _VARS["audioData"].size != 0:
         # Update volume meter
         _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
