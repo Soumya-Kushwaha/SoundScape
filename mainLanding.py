@@ -24,7 +24,7 @@ layout = [
 ]
 
 # Create the main window with a fixed size and responsive settings
-window = sg.Window("Welcome to SoundScape ", layout, finalize=True, element_justification="center", resizable=True, size=(800, 600))
+window = sg.Window("Welcome to SoundScape ", layout,icon="icons/main.ico", finalize=True, element_justification="center", resizable=True, size=(800, 600))
 
 # Function to close the current visualizer process
 def close_current_visualizer(process):

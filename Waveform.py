@@ -33,7 +33,7 @@ layout = [
         sg.Button("Exit", font=AppFont),
     ],
 ]
-_VARS["window"] = sg.Window("Mic to waveform plot + Max Level", layout, finalize=True)
+_VARS["window"] = sg.Window("Mic to waveform plot + Max Level", layout, icon="icons/waveform.ico", finalize=True)
 graph = _VARS["window"]["graph"]
 
 # INIT vars:
