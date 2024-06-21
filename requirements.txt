@@ -1,7 +1,7 @@
-numpy
-matplotlib
-scipy
-PyAudio
-PySimpleGUI
-sounddevice
-soundfile
+numpy==1.26.4
+matplotlib==3.9.0
+scipy==1.13.1
+PyAudio==0.2.14
+PySimpleGUI==5.0.4
+sounddevice==0.4.6
+soundfile==0.12.1
