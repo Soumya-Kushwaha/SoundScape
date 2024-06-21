@@ -150,7 +150,6 @@ while True:
         stop()
     if event == "Save":
         save()
-
     if event == 'Amplitude-Frequency-Visualizer':
         close_current_visualizer()
         _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
@@ -171,6 +170,7 @@ while True:
         _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
         _VARS["window"].close()
         break    
+
     elif _VARS["audioData"].size != 0:
         try:
             _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
