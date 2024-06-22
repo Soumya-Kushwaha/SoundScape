@@ -32,19 +32,19 @@ pip install -r requirements.txt
 ### 1. Waveform
 This file simply visualizes the waveform of audio detected in real time. To view the waveform, run the code:
 ```
-python waveform.py
+python Waveform.py
 ```
 
 ### 2. Spectogram
 This file visualizes the spectogram of the audio detected in real time. To view the spectogram, run the code:
 ```
-python spectogram.py
+python Spectrogram.py
 ```
 
 ### 3. Amplitude vs Frequency
 This file visualizes the amplitude v/s frequency of the audio detected in real time. To view the amplitude v/s frequency graph, run the code:
 ```
-python amplitude-frequency-visualizer.py
+python Amplitude-Frequency-Visualizer.py
 ```
 
 <br>
