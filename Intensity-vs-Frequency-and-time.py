@@ -34,7 +34,7 @@ layout = [
         sg.Button("Exit", font=AppFont),
     ],
 ]
-_VARS["window"] = sg.Window("Mic to Sound Intensity vs Frequency heatmap", layout, finalize=True)
+_VARS["window"] = sg.Window("Mic to Sound Intensity vs Frequency heatmap", layout,icon="icons/inten-vs-freq.ico", finalize=True)
 graph = _VARS["window"]["graph"]
 
 # INIT vars:

@@ -40,7 +40,7 @@ layout = [
         sg.Button("Exit", font=AppFont),
     ],
 ]
-_VARS["window"] = sg.Window("Mic to spectrogram plot + Max Level", layout, finalize=True)
+_VARS["window"] = sg.Window("Mic to spectrogram plot + Max Level", layout,icon="icons/spectrogram.ico", finalize=True)
 graph = _VARS["window"]["graph"]
 
 # INIT vars:

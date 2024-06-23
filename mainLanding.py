@@ -25,7 +25,7 @@ def create_layout():
 
 # Create the main window with the initial layout
 layout = create_layout()
-window = sg.Window("Welcome to SoundScape ", layout, finalize=True, element_justification="center", resizable=False, size=(800, 600))
+window = sg.Window("Welcome to SoundScape ", layout,icon="icons/main.ico", finalize=True, element_justification="center", resizable=False, size=(800, 600))
 
 def close_current_visualizer(process):
     if process and process.poll() is None:
