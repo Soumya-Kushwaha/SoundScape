@@ -1,91 +1,37 @@
-import PySimpleGUI as sg
 import pyaudio
 import numpy as np
 import scipy.signal
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import subprocess
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.label import Label
+from kivy.uix.progressbar import ProgressBar
+from kivy.uix.popup import Popup
+from kivy.graphics.texture import Texture
+from kivy.uix.image import Image
+from kivy.clock import Clock
+from kivy.uix.filechooser import FileChooserIconView
+import io
 
-
-
-""" RealTime Audio Spectrogram plot """
-
-# VARS CONSTS:
-_VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_visualizer_process": None}
-
-# pysimpleGUI INIT:
-AppFont = "Any 16"
-sg.theme("DarkBlue3")
-
-menu_layout = [
-    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']],
-]
-
-layout = [
-    [sg.Menu(menu_layout)],
-    [
-        sg.Graph(
-            canvas_size=(500, 500),
-            graph_bottom_left=(-2, -2),
-            graph_top_right=(102, 102),
-            background_color="#809AB6",
-            key="graph",
-        )
-    ],
-    [sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
-    [
-        sg.Button("Listen", font=AppFont),
-        sg.Button("Stop", font=AppFont, disabled=True),
-        sg.Button("Save", font=AppFont, disabled=True),
-        sg.Button("Exit", font=AppFont),
-    ],
-]
-_VARS["window"] = sg.Window("Mic to spectrogram plot + Max Level", layout, finalize=True)
-graph = _VARS["window"]["graph"]
-
-# INIT vars:
-CHUNK = 1024  # Samples: 1024,  512, 256, 128
-RATE = 44100  # Equivalent to Human Hearing at 40 kHz
-INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
-TIMEOUT = 10  # In ms for the event loop
+# Global Variables
+_VARS = {"stream": None, "audioData": np.array([])}
+CHUNK = 1024
+RATE = 44100
 pAud = pyaudio.PyAudio()
 
+# Check if audio input is available
 try:
     pAud.get_device_info_by_index(0)
-except pyaudio.CoreError as e:
+except pyaudio.PyAudioError as e:
     print(f"Error initializing PyAudio: {e}")
     pAud = None
 
-# FUNCTIONS:
-
-# PySimpleGUI plots:
-def draw_figure(canvas, figure):
-    figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
-    figure_canvas_agg.draw()
-    figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
-    return figure_canvas_agg
-
-
-# pyaudio stream:
-def stop():
-    if _VARS["stream"]:
-        _VARS["stream"].stop_stream()
-        _VARS["stream"].close()
-        _VARS["stream"] = None
-        _VARS["window"]["-PROG-"].update(0)
-        _VARS["window"]["Stop"].Update(disabled=True)
-        _VARS["window"]["Listen"].Update(disabled=False)
-        _VARS["window"]["Save"].Update(disabled=True)
-
-# callback:
 def callback(in_data, frame_count, time_info, status):
     _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
     return (in_data, pyaudio.paContinue)
 
 def listen():
-    _VARS["window"]["Stop"].Update(disabled=False)
-    _VARS["window"]["Listen"].Update(disabled=True)
-    _VARS["window"]["Save"].Update(disabled=False)
     _VARS["stream"] = pAud.open(
         format=pyaudio.paInt16,
         channels=1,
@@ -96,74 +42,110 @@ def listen():
     )
     _VARS["stream"].start_stream()
 
-def close_current_visualizer():
-    if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
-        _VARS["current_visualizer_process"].kill()
+def stop():
+    if _VARS["stream"]:
+        _VARS["stream"].stop_stream()
+        _VARS["stream"].close()
+        _VARS["stream"] = None
 
-def save_spectrogram():
-    file_path = sg.popup_get_file('Save as', save_as=True, no_window=True, file_types=(("PNG Files", "*.png"), ("All Files", "*.*")))
-    if file_path:
-        fig.savefig(file_path)
-        sg.popup("File saved!", title="Success")
+class SpectrogramApp(App):
+    def build(self):
+        self.title = "Mic to Spectrogram Plot + Max Level"
+        self.layout = BoxLayout(orientation='vertical')
 
-# INIT:
-fig, ax = plt.subplots()  # create a figure and an axis object
-fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
+        self.image = Image()
+        self.layout.add_widget(self.image)
 
+        self.progress = ProgressBar(max=4000)
+        self.layout.add_widget(self.progress)
 
-# MAIN LOOP
-while True:
-    event, values = _VARS["window"].read(timeout=TIMEOUT)
-    if event in (sg.WIN_CLOSED, "Exit"):
-        close_current_visualizer()
+        self.button_layout = BoxLayout(size_hint_y=0.2)
+        
+        self.listen_button = Button(text="Listen")
+        self.listen_button.bind(on_press=self.on_listen)
+        self.button_layout.add_widget(self.listen_button)
+
+        self.stop_button = Button(text="Stop", disabled=True)
+        self.stop_button.bind(on_press=self.on_stop)
+        self.button_layout.add_widget(self.stop_button)
+
+        self.save_button = Button(text="Save", disabled=True)
+        self.save_button.bind(on_press=self.on_save)
+        self.button_layout.add_widget(self.save_button)
+
+        self.exit_button = Button(text="Exit")
+        self.exit_button.bind(on_press=self.on_exit)
+        self.button_layout.add_widget(self.exit_button)
+        
+        self.layout.add_widget(self.button_layout)
+        self.event = None
+
+        return self.layout
+
+    def on_listen(self, instance):
+        listen()
+        self.listen_button.disabled = True
+        self.stop_button.disabled = False
+        self.save_button.disabled = False
+        self.event = Clock.schedule_interval(self.update, 0.1)
+
+    def on_stop(self, instance):
+        stop()
+        self.listen_button.disabled = False
+        self.stop_button.disabled = True
+        self.save_button.disabled = True
+        if self.event:
+            self.event.cancel()
+            self.event = None
+
+    def on_save(self, instance):
+        content = BoxLayout(orientation='vertical')
+        filechooser = FileChooserIconView()
+        content.add_widget(filechooser)
+        save_button = Button(text="Save", size_hint_y=0.2)
+        content.add_widget(save_button)
+        popup = Popup(title="Save as", content=content, size_hint=(0.9, 0.9))
+        
+        def save(instance):
+            if filechooser.selection:
+                file_path = filechooser.selection[0]
+                self.save_figure(file_path)
+                popup.dismiss()
+        
+        save_button.bind(on_press=save)
+        popup.open()
+
+    def on_exit(self, instance):
         stop()
         pAud.terminate()
-        break
+        App.get_running_app().stop()
 
-    if event == "Listen":
-        listen()
-
-    if event == "Stop":
-        stop()
-
-    if event == "Save":
-        save_spectrogram()
-
-    if event == 'Amplitude-Frequency-Visualizer':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Waveform':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Spectogram':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Intensity-vs-Frequency-and-time':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
-        _VARS["window"].close()  
-        break 
-    
- # Along with the global audioData variable, this
-    # bit updates the spectrogram plot
-    elif _VARS["audioData"].size != 0:
-        # Update volume meter
-        _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
-        # Compute spectrogram
+    def save_figure(self, file_path):
+        fig, ax = plt.subplots()
         f, t, Sxx = scipy.signal.spectrogram(_VARS["audioData"], fs=RATE)
-        # Plot spectrogram
-        ax.clear()  # clear the previous plot
-        ax.pcolormesh(
-            t, f, Sxx, shading="gouraud"
-        )  # plot the spectrogram as a colored mesh
-        ax.set_ylabel("Frequency [Hz]")  # set the y-axis label
-        ax.set_xlabel("Time [sec]")  # set the x-axis label
-        fig_agg.draw()  # redraw the figure
+        ax.pcolormesh(t, f, Sxx, shading="gouraud")
+        ax.set_ylabel("Frequency [Hz]")
+        ax.set_xlabel("Time [sec]")
+        plt.savefig(file_path)
+        plt.close(fig)
 
-_VARS["window"].close()
+    def update(self, dt):
+        if _VARS["audioData"].size != 0:
+            self.progress.value = np.amax(_VARS["audioData"])
+            f, t, Sxx = scipy.signal.spectrogram(_VARS["audioData"], fs=RATE)
+            fig, ax = plt.subplots()
+            ax.pcolormesh(t, f, Sxx, shading="gouraud")
+            ax.set_ylabel("Frequency [Hz]")
+            ax.set_xlabel("Time [sec]")
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png')
+            buf.seek(0)
+            img = plt.imread(buf, format='png')
+            buf.close()
+            texture = Texture.create(size=(img.shape[1], img.shape[0]), colorfmt='rgb')
+            texture.blit_buffer(img.tobytes(), colorfmt='rgb', bufferfmt='ubyte')
+            self.image.texture = texture
+            plt.close(fig)
+
+if __name__ == "__main__":
+    SpectrogramApp().run()
