@@ -1,190 +1,119 @@
-import PySimpleGUI as sg
+import kivy
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.uix.progressbar import ProgressBar
+from kivy.clock import Clock
+from kivy.graphics import Color, Rectangle
+from kivy.core.window import Window
 import pyaudio
 import numpy as np
-import scipy.fft
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import subprocess
 
-"""Realtime Sound Intensity vs Frequency heatmap"""
+class SoundScapeApp(App):
+    def build(self):
+        self.stream = None
+        self.audioData = np.array([])
+        self.current_visualizer_process = None
 
-# VARS CONSTS:
-_VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_visualizer_process": None}
+        layout = BoxLayout(orientation='vertical', padding=20, spacing=20)
+        
+        self.graph = BoxLayout()
+        self.graph.canvas.add(Color(0.5, 0.5, 0.5, 1))
+        self.graph.canvas.add(Rectangle(size=(500, 500)))
 
-# pysimpleGUI INIT:
-AppFont = "Any 16"
-sg.theme("DarkBlue3")
+        self.progress_bar = ProgressBar(max=4000, size_hint=(1, None), height=20)
+        
+        btn_layout = BoxLayout(size_hint=(1, None), height=50)
+        self.listen_btn = Button(text="Listen", on_press=self.listen)
+        self.stop_btn = Button(text="Stop", on_press=self.stop, disabled=True)
+        self.exit_btn = Button(text="Exit", on_press=self.stop)
 
-# Heatmap plot:
-layout = [
-  
-    [
-        sg.Graph(
-            canvas_size=(500, 500),
-            graph_bottom_left=(-2, -2),
-            graph_top_right=(102, 102),
-            background_color="#809AB6",
-            key="graph",
+        btn_layout.add_widget(self.listen_btn)
+        btn_layout.add_widget(self.stop_btn)
+        btn_layout.add_widget(self.exit_btn)
+
+        layout.add_widget(Label(text="Mic to Sound Intensity vs Frequency heatmap", font_size=24, size_hint=(1, 0.1)))
+        layout.add_widget(self.graph)
+        layout.add_widget(self.progress_bar)
+        layout.add_widget(btn_layout)
+
+        Clock.schedule_interval(self.update, 0.1)
+        return layout
+
+    def listen(self, instance):
+        self.stop_btn.disabled = False
+        self.listen_btn.disabled = True
+
+        self.stream = pAud.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=RATE,
+            input=True,
+            frames_per_buffer=CHUNK,
+            stream_callback=self.callback,
         )
-    ],
-    [sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
-    [
-        sg.Button("Listen", font=AppFont),
-        sg.Button("Stop", font=AppFont, disabled=True),
-        sg.Button("Exit", font=AppFont),
-    ],
-]
-_VARS["window"] = sg.Window("Mic to Sound Intensity vs Frequency heatmap", layout, finalize=True)
-graph = _VARS["window"]["graph"]
+        self.stream.start_stream()
 
-# INIT vars:
-CHUNK = 1024  # Samples: 1024,  512, 256, 128
-RATE = 44100  # Equivalent to Human Hearing at 40 kHz
-INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
-TIMEOUT = 10  # In ms for the event loop
-pAud = pyaudio.PyAudio()
+    def stop(self, instance):
+        if self.stream:
+            self.stream.stop_stream()
+            self.stream.close()
+            self.stream = None
+            self.progress_bar.value = 0
+            self.stop_btn.disabled = True
+            self.listen_btn.disabled = False
+        if self.current_visualizer_process:
+            self.current_visualizer_process.kill()
+            self.current_visualizer_process = None
+        App.get_running_app().stop()
 
-# PySimpleGUI plots:
-def drawHeatMapWithLabels(intensity_data):
-    graph.erase()  # Clear previous heatmap
-    rows, cols = intensity_data.shape
+    def callback(self, in_data, frame_count, time_info, status):
+        self.audioData = np.frombuffer(in_data, dtype=np.int16)
+        return (in_data, pyaudio.paContinue)
 
-    # Draw labels for frequency axis
-    for row in range(rows):
-        graph.DrawText(f"{row * (RATE / 2) / rows:.0f} Hz", (105, 100 - row * 100 / rows))
+    def update(self, dt):
+        if self.audioData.size != 0:
+            self.progress_bar.value = np.amax(self.audioData)
+            intensity_data = self.compute_intensity_data(self.audioData)
+            self.draw_heatmap(intensity_data)
 
-    # Draw labels for time axis
-    for col in range(cols):
-        graph.DrawText(f"{col * INTERVAL:.1f} sec", (col * 100 / cols, -5))
+    def compute_intensity_data(self, audio_data, window_size=1024, hop_size=512):
+        num_frames = len(audio_data) // hop_size
+        intensity_data = np.zeros((num_frames, window_size // 2))
 
-    # Draw heatmap
-    for row in range(rows):
-        for col in range(cols):
-            intensity = intensity_data[row, col]
-            color = getHeatMapColor(intensity)
-            x1 = col * 100 / cols
-            y1 = 100 - (row + 1) * 100 / rows
-            x2 = x1 + 100 / cols
-            y2 = y1 + 100 / rows
-            graph.DrawRectangle((x1, y1), (x2, y2), line_color=color, fill_color=color)
+        for i in range(num_frames):
+            frame = audio_data[i * hop_size: (i + 1) * hop_size]
+            intensity_data[i, :] = np.abs(np.fft.fft(frame)[:window_size // 2])
+        return intensity_data
 
-# pyaudio stream:
-def stop():
-    if _VARS["stream"]:
-        _VARS["stream"].stop_stream()
-        _VARS["stream"].close()
-        _VARS["stream"] = None
-        _VARS["window"]["-PROG-"].update(0)
-        _VARS["window"]["Stop"].Update(disabled=True)
-        _VARS["window"]["Listen"].Update(disabled=False)
+    def draw_heatmap(self, intensity_data):
+        self.graph.canvas.clear()
+        rows, cols = intensity_data.shape
+        for row in range(rows):
+            for col in range(cols):
+                intensity = intensity_data[row, col]
+                color = self.get_heatmap_color(intensity)
+                x1 = col * 500 / cols
+                y1 = 500 - (row + 1) * 500 / rows
+                x2 = x1 + 500 / cols
+                y2 = y1 + 500 / rows
+                with self.graph.canvas:
+                    Color(*color)
+                    Rectangle(pos=(x1, y1), size=(x2 - x1, y2 - y1))
 
-# callback:
-def callback(in_data, frame_count, time_info, status):
-    _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
-    return (in_data, pyaudio.paContinue)
-
-def listen():
-    _VARS["window"]["Stop"].Update(disabled=False)
-    _VARS["window"]["Listen"].Update(disabled=True)
-    _VARS["stream"] = pAud.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=RATE,
-        input=True,
-        frames_per_buffer=CHUNK,
-        stream_callback=callback,
-    )
-    _VARS["stream"].start_stream()
-
-def close_current_visualizer():
-    if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
-        _VARS["current_visualizer_process"].kill()
-
-# INIT:
-
-def initHeatMap(graph, rate, interval, rows, cols):
-
-    # Clear previous drawing
-
-    graph.erase()
-
-    #Initial setup for the heatmap
-
-    for row in range(rows):
-
-        graph.DrawText(f"{row * (rate / 2) / rows:.0f} Hz", (105, 100 - row * 100 / rows))
-
-
-
-    # Draw labels for time axis
-
-    for col in range(cols):
-
-        graph.DrawText(f"{col * interval:.1f} sec", (col * 100 / cols, -5))
-
-
-
-# Call the initHeatMap function to initialize the heatmap
-
-rows = 10  # Number of rows in the heatmap
-
-cols = 10  # Number of columns in the heatmap
-
-initHeatMap(graph, RATE, INTERVAL, rows, cols)
-
-# Function to get heatmap color
-def getHeatMapColor(intensity, threshold=0.0, cmap=None):
-    # Default color map
-    if cmap is None:
-        cmap = ["#0000ff", "#00ff00", "#ffff00", "#ff0000"]  # Blue to Red gradient
-    
-    # Determining color based on intensity and thresholds
-    if np.isnan(intensity):
-        return "#808080"  # Gray color for NaN values
-    else:
-        # Normalizing intensity to fit within the colormap range
-        intensity_norm = np.log1p(intensity) / 20  # Logarithmic scale for better visualization
+    def get_heatmap_color(self, intensity, threshold=0.0):
+        cmap = [(0, 0, 1, 1), (0, 1, 0, 1), (1, 1, 0, 1), (1, 0, 0, 1)]
+        if np.isnan(intensity):
+            return (0.5, 0.5, 0.5, 1)
+        intensity_norm = np.log1p(intensity) / 20
         color_index = min(int(intensity_norm * len(cmap)), len(cmap) - 1)
         return cmap[color_index]
-
-def compute_intensity_data(audio_data, window_size=1024, hop_size=512):
-    num_frames = len(audio_data) // hop_size
-    intensity_data = np.zeros((num_frames, window_size // 2))
-
-    for i in range(num_frames):
-        frame = audio_data[i * hop_size: (i + 1) * hop_size]
-        intensity_data[i, :] = np.abs(np.fft.fft(frame)[:window_size // 2])  # Magnitude spectrum
-    return intensity_data
-
-# MAIN LOOP
-while True:
-    event, values = _VARS["window"].read(timeout=TIMEOUT)
-    if event in (sg.WIN_CLOSED, "Exit"):
-        close_current_visualizer()
-        stop()
-        pAud.terminate()
-        break
-    # for handling the closing of application
-    if event == sg.WIN_CLOSED :
-        _VARS["stream"].stop_stream()
-        _VARS["stream"].close()
-        pAud.terminate()
-        break
-    if event == "Listen":
-        listen()
-    if event == "Stop":
-        stop()
-        
-    # Along with the global audioData variable, this
-    # bit updates the waveform plot
-    elif _VARS["audioData"].size != 0:
-        # Update volume meter
-        _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
-        
-        # Compute intensity data for heatmap
-        intensity_data = compute_intensity_data(_VARS["audioData"])
-        
-        # Draw heatmap
-        drawHeatMapWithLabels(intensity_data)
-
-_VARS["window"].close()
+if __name__=='__main__':
+    CHUNK=1024
+    RATE=44100
+    INTERVAL=1
+    TIMEOUT=10
+    pAud = pyaudio.PyAudio()
+    SoundScapeApp().run()
