@@ -34,6 +34,7 @@ class SoundScapeApp(App):
         button_layout.add_widget(Button(text="Waveform", on_press=self.launch_visualizer))
         button_layout.add_widget(Button(text="Spectrogram", on_press=self.launch_visualizer))
         button_layout.add_widget(Button(text="Intensity vs Frequency and Time", on_press=self.launch_visualizer))
+        button_layout.add_widget(Button(text="Depth-Perspective Visualizer", on_press=self.launch_visualizer))
 
         theme_button = Button(text="Change Theme", size_hint=(1, 0.1), background_color=(0, 1, 0, 1))
         theme_button.bind(on_press=self.change_theme)
@@ -88,7 +89,8 @@ class SoundScapeApp(App):
             "Amplitude-Frequency Visualizer": "Amplitude-Frequency-Visualizer.py",
             "Waveform": "Waveform.py",
             "Spectrogram": "Spectogram.py",
-            "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-Time.py"
+            "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-Time.py",
+            "Depth-Perspective Visualizer": "Depth-Perspective-Visualizer.py"  
         }
         
         script_name = instance.text
