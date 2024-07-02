@@ -17,7 +17,7 @@ button_layout = [
     [sg.Button("Spectrogram", **button_style, pad=(10, 10))],
     [sg.Button("Intensity vs Frequency and Time", **button_style, pad=(10, 10))],
     [sg.Button("Real-Time VU Meter", **button_style, pad=(10, 10))],  # New button for Triangle Wave
-   ]
+]
 
 # Layout for the main landing page
 layout = [
@@ -40,6 +40,23 @@ def close_current_visualizer(process):
         process.kill()
         process.wait()
 
+# Consolidated function to handle GUI updates
+def handle_event(event, process):
+    # Mapping event to corresponding script names
+    script_mapping = {
+        "Amplitude-Frequency Visualizer": "Amplitude-Frequency-Visualizer.py",
+        "Waveform": "Waveform.py",
+        "Spectrogram": "Spectrogram.py",
+        "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-time.py",
+        "Real-Time VU Meter": "Real-Time VU Meter.py",  # Added button for "Triangle Wave"
+    }
+
+    if event in script_mapping:
+        close_current_visualizer(process)
+        script_name = script_mapping[event]
+        return subprocess.Popen([sys.executable, script_name])
+    return process
+
 # Main loop
 current_visualizer_process = None
 
@@ -50,19 +67,6 @@ while True:
         close_current_visualizer(current_visualizer_process)
         break
 
-    if event in ["Amplitude-Frequency Visualizer", "Waveform", "Spectrogram", "Intensity vs Frequency and Time","Real-Time VU Meter", "Sine Wave", "Square Wave", "Triangle Wave", "Sawtooth Wave"]:
-        close_current_visualizer(current_visualizer_process)
-        
-        # Mapping event to corresponding script names
-        script_mapping = {
-            "Amplitude-Frequency Visualizer": "Amplitude-Frequency-Visualizer.py",
-            "Waveform": "Waveform.py",
-            "Spectrogram": "Spectrogram.py",
-            "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-time.py",
-            "Real-Time VU Meter": "Real-Time VU Meter.py",  # Added button for "Triangle Wave"
-        }
-
-        script_name = script_mapping[event]
-        current_visualizer_process = subprocess.Popen([sys.executable, script_name])
+    current_visualizer_process = handle_event(event, current_visualizer_process)
 
 window.close()
