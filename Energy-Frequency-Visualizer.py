@@ -7,13 +7,14 @@ from kivy.uix.popup import Popup
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 from kivy.uix.image import Image
+from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelItem
+from kivy.uix.textinput import TextInput
 
 import pyaudio
 import numpy as np
 import soundfile as sf
 import scipy.fft
 import matplotlib.pyplot as plt
-import subprocess
 import os
 
 # vars:
@@ -103,7 +104,11 @@ class MicVisualizerApp(App):
     def build(self):
         global progress_bar, btn_listen, btn_pause, btn_resume, btn_stop, btn_save, fig, ax, canvas_img
 
-        layout = BoxLayout(orientation='vertical')
+        tab_panel = TabbedPanel(do_default_tab=False)
+
+        # Listening tab
+        listening_tab = TabbedPanelItem(text='Listening')
+        listening_layout = BoxLayout(orientation='vertical')
 
         btn_listen = Button(text='Listen', on_press=listen)
         btn_pause = Button(text='Pause', on_press=pause, disabled=True)
@@ -122,17 +127,55 @@ class MicVisualizerApp(App):
         button_layout.add_widget(btn_save)
         button_layout.add_widget(btn_exit)
 
-        layout.add_widget(Label(text='Progress:', size_hint_y=None, height=50))
-        layout.add_widget(progress_bar)
-        layout.add_widget(button_layout)
+        listening_layout.add_widget(Label(text='Progress:', size_hint_y=None, height=50))
+        listening_layout.add_widget(progress_bar)
+        listening_layout.add_widget(button_layout)
+
+        listening_tab.add_widget(listening_layout)
+        tab_panel.add_widget(listening_tab)
+
+        # Visualization tab
+        visualization_tab = TabbedPanelItem(text='Visualization')
+        visualization_layout = BoxLayout(orientation='vertical')
 
         fig, ax = plt.subplots()
         canvas_img = Image()
-        layout.add_widget(canvas_img)
+        visualization_layout.add_widget(canvas_img)
+
+        visualization_tab.add_widget(visualization_layout)
+        tab_panel.add_widget(visualization_tab)
+
+        # Settings tab
+        settings_tab = TabbedPanelItem(text='Settings')
+        settings_layout = BoxLayout(orientation='vertical')
+
+        rate_label = Label(text='Sample Rate:')
+        self.rate_input = TextInput(text=str(RATE), multiline=False)
+        chunk_label = Label(text='Chunk Size:')
+        self.chunk_input = TextInput(text=str(CHUNK), multiline=False)
+
+        apply_button = Button(text='Apply', on_press=self.apply_settings)
+        settings_layout.add_widget(rate_label)
+        settings_layout.add_widget(self.rate_input)
+        settings_layout.add_widget(chunk_label)
+        settings_layout.add_widget(self.chunk_input)
+        settings_layout.add_widget(apply_button)
+
+        settings_tab.add_widget(settings_layout)
+        tab_panel.add_widget(settings_tab)
 
         Clock.schedule_interval(self.update_plot, 0.1)
 
-        return layout
+        return tab_panel
+
+    def apply_settings(self, instance):
+        global RATE, CHUNK
+        try:
+            RATE = int(self.rate_input.text)
+            CHUNK = int(self.chunk_input.text)
+            popup_message('Settings Applied', 'Sample Rate and Chunk Size updated.')
+        except ValueError:
+            popup_message('Invalid Input', 'Please enter valid integer values.')
 
     def update_plot(self, dt):
         if _VARS["audioData"].size != 0:
@@ -146,7 +189,7 @@ class MicVisualizerApp(App):
             ax.set_xlabel("Frequency [Hz]")
             ax.grid(True)
             ax.legend()
-            
+
             self.update_canvas()
 
     def update_canvas(self):
