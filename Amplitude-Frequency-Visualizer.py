@@ -1,103 +1,74 @@
-import PySimpleGUI as sg
+import kivy
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.label import Label
+from kivy.uix.progressbar import ProgressBar
+from kivy.uix.popup import Popup
+from kivy.uix.image import Image
+from kivy.clock import Clock
+from kivy.graphics.texture import Texture
+
 import pyaudio
 import numpy as np
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import soundfile as sf
 import scipy.fft
 import matplotlib.pyplot as plt
-import subprocess
 import traceback
 
 # VARS CONSTS:
-
 _VARS = {
-    "window": False,
     "stream": False,
     "audioData": np.array([]),
     "audioBuffer": np.array([]),
     "current_visualizer_process": None,
 }
 
-# PySimpleGUI INIT:
-AppFont = "Helvetica"
-sg.theme("DarkBlue3")
-
-menu_layout = [
-    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectogram', 'Intensity-vs-Frequency-and-time']],
-]
-
-layout = [
-    [sg.Menu(menu_layout)],
-    [
-        sg.Graph(
-            canvas_size=(600, 600),
-            graph_bottom_left=(-2, -2),
-            graph_top_right=(102, 102),
-            background_color="#809AB6",
-            key="graph",
-            tooltip="Frequency graph"  # Tooltip added
-        )
-    ],
-    [sg.Text("Progress:", text_color='white', font=('Helvetica', 15, 'bold')), sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
-    [
-        sg.Button("Listen", font=AppFont, tooltip="Start listening"),
-        sg.Button("Pause", font=AppFont, disabled=True, tooltip="Pause listening"),
-        sg.Button("Resume", font=AppFont, disabled=True, tooltip="Resume listening"),
-        sg.Button("Stop", font=AppFont, disabled=True, tooltip="Stop listening"),
-        sg.Button("Save", font=AppFont, disabled=True, tooltip="Save the plot"),
-        sg.Button("Exit", font=AppFont, tooltip="Exit the application"),
-    ],
-]
-
-_VARS["window"] = sg.Window("Mic to frequency plot + Max Level", layout, finalize=True)
-graph = _VARS["window"]["graph"]
-
 # INIT vars:
-CHUNK = 1024  # Samples: 1024,  512, 256, 128
-RATE = 44100  # Equivalent to Human Hearing at 40 kHz
-INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
-TIMEOUT = 10  # In ms for the event loop
+CHUNK = 1024
+RATE = 44100
+INTERVAL = 1
+TIMEOUT = 0.1
 pAud = pyaudio.PyAudio()
 
-# FUNCTIONS:
-
-def draw_figure(canvas, figure):
-    figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
-    figure_canvas_agg.draw()
-    figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
-    return figure_canvas_agg
-
-def stop():
+def stop(instance=None):
     if _VARS["stream"]:
         _VARS["stream"].stop_stream()
         _VARS["stream"].close()
         _VARS["stream"] = None
-        _VARS["window"]["-PROG-"].update(0)
-        _VARS["window"]["Stop"].Update(disabled=True)
-        _VARS["window"]["Listen"].Update(disabled=False)
+        progress_bar.value = 0
+        btn_stop.disabled = True
+        btn_listen.disabled = False
+        btn_pause.disabled = True
+        btn_resume.disabled = True
+        btn_save.disabled = True
 
-def pause():
+def pause(instance=None):
     if _VARS["stream"] and _VARS["stream"].is_active():
         _VARS["stream"].stop_stream()
-        _VARS["window"]["Pause"].Update(disabled=True)
-        _VARS["window"]["Resume"].Update(disabled=False)
+        btn_pause.disabled = True
+        btn_resume.disabled = False
 
-def resume():
+def resume(instance=None):
     if _VARS["stream"] and not _VARS["stream"].is_active():
         _VARS["stream"].start_stream()
-        _VARS["window"]["Pause"].Update(disabled=False)
-        _VARS["window"]["Resume"].Update(disabled=True)
+        btn_pause.disabled = False
+        btn_resume.disabled = True
 
-def save():
-    # Ask the user for a directory to save the image file
-    folder = sg.popup_get_folder('Please select a directory to save the files')
-    if folder:
+def save(instance=None):
+    folder = 'saved_files'
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    try:
         # Save the figure as an image file
         fig.savefig(f'{folder}/output.png')
-        sg.popup('Success', f'Image saved as {folder}/output.png')
+        popup_message('Success', f'Image saved as {folder}/output.png')
+
         # Save the recorded audio data to a file
         sf.write(f'{folder}/output.wav', _VARS["audioBuffer"], RATE)
-        sg.popup('Success', f'Audio saved as {folder}/output.wav')
+        popup_message('Success', f'Audio saved as {folder}/output.wav')
+    except Exception as e:
+        popup_message('Error saving files', str(e))
 
 def callback(in_data, frame_count, time_info, status):
     try:
@@ -108,10 +79,11 @@ def callback(in_data, frame_count, time_info, status):
         traceback.print_exc()
     return (in_data, pyaudio.paContinue)
 
-def listen():
+def listen(instance=None):
     try:
-        _VARS["window"]["Stop"].Update(disabled=False)
-        _VARS["window"]["Listen"].Update(disabled=True)
+        btn_stop.disabled = False
+        btn_listen.disabled = True
+        btn_pause.disabled = False
         _VARS["stream"] = pAud.open(
             format=pyaudio.paInt16,
             channels=1,
@@ -122,70 +94,82 @@ def listen():
         )
         _VARS["stream"].start_stream()
     except Exception as e:
-        sg.popup_error(f"Error: {e}")
+        popup_message('Error', f"Error: {e}")
 
-def close_current_visualizer():
-    if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
-        _VARS["current_visualizer_process"].kill()
+def popup_message(title, message):
+    popup = Popup(title=title, content=Label(text=message), size_hint=(0.8, 0.8))
+    popup.open()
 
-# INIT:
-fig, ax = plt.subplots()  # create a figure and an axis object
-fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
+class MicVisualizerApp(App):
+    def build(self):
+        global progress_bar, btn_listen, btn_pause, btn_resume, btn_stop, btn_save, fig, ax, canvas_img
 
-# MAIN LOOP
-while True:
-    event, values = _VARS["window"].read(timeout=TIMEOUT)
-    if event == "Exit" or event == sg.WIN_CLOSED:
-        stop()
-        pAud.terminate()
-        break
-    if event == "Listen":
-        listen()
-        _VARS["window"]["Save"].Update(disabled=False)
-    if event == "Pause":
-        pause()
-    if event == "Resume":
-        resume()
-    if event == "Stop":
-        stop()
-    if event == "Save":
-        save()
-    if event == 'Amplitude-Frequency-Visualizer':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
-        _VARS["window"].close()
-        break 
-    if event == 'Waveform':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
-        _VARS["window"].close()
-        break 
-    if event == 'Spectogram':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
-        _VARS["window"].close()
-        break 
-    if event == 'Intensity-vs-Frequency-and-time':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
-        _VARS["window"].close()
-        break    
+        layout = BoxLayout(orientation='vertical')
 
-    elif _VARS["audioData"].size != 0:
-        try:
-            _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
-            yf = scipy.fft.fft(_VARS["audioData"])  
-            xf = np.linspace(0.0, RATE / 2, CHUNK // 2)  
-            ax.clear()  
+        btn_listen = Button(text='Listen', on_press=listen)
+        btn_pause = Button(text='Pause', on_press=pause, disabled=True)
+        btn_resume = Button(text='Resume', on_press=resume, disabled=True)
+        btn_stop = Button(text='Stop', on_press=stop, disabled=True)
+        btn_save = Button(text='Save', on_press=save, disabled=True)
+        btn_exit = Button(text='Exit', on_press=self.stop)
+
+        progress_bar = ProgressBar(max=4000)
+
+        button_layout = BoxLayout(size_hint_y=None, height=50)
+        button_layout.add_widget(btn_listen)
+        button_layout.add_widget(btn_pause)
+        button_layout.add_widget(btn_resume)
+        button_layout.add_widget(btn_stop)
+        button_layout.add_widget(btn_save)
+        button_layout.add_widget(btn_exit)
+
+        layout.add_widget(Label(text='Progress:', size_hint_y=None, height=50))
+        layout.add_widget(progress_bar)
+        layout.add_widget(button_layout)
+
+        fig, ax = plt.subplots()
+        canvas_img = Image()
+        layout.add_widget(canvas_img)
+
+        Clock.schedule_interval(self.update_plot, TIMEOUT)
+
+        return layout
+
+    def update_plot(self, dt):
+        if _VARS["audioData"].size != 0:
+            progress_bar.value = np.amax(_VARS["audioData"])
+            yf = scipy.fft.fft(_VARS["audioData"])
+            xf = np.linspace(0.0, RATE / 2, CHUNK // 2)
+            ax.clear()
             ax.plot(
                 xf, 2.0 / CHUNK * np.abs(yf[: CHUNK // 2]), label='Frequency Spectrum'
-            )  
-            ax.set_title("Frequency Spectrum")  # Add this line to set the title
-            ax.set_ylabel("Amplitude")  
-            ax.set_xlabel("Frequency [Hz]")  
-            ax.grid(True)  # Enable gridlines
-            ax.legend()  # Add a legend
-            fig_agg.draw()  # redraw the figure
-        except Exception as e:
-            print("Error during plotting:", e)
-            traceback.print_exc()
+            )
+            ax.set_title("Frequency Spectrum")
+            ax.set_ylabel("Amplitude")
+            ax.set_xlabel("Frequency [Hz]")
+            ax.grid(True)
+            ax.legend()
+
+            self.update_canvas()
+
+    def update_canvas(self):
+        fig.canvas.draw()
+        width, height = fig.canvas.get_width_height()
+        buf = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+        buf = buf.reshape(height, width, 3)
+
+        texture = Texture.create(size=(width, height))
+        texture.blit_buffer(buf.tostring(), colorfmt='rgb', bufferfmt='ubyte')
+        texture.flip_vertical()
+
+        canvas_img.texture = texture
+
+    def on_stop(self):
+        stop(None)
+        if _VARS["current_visualizer_process"]:
+            close_current_visualizer()
+        pAud.terminate()
+
+if __name__ == '__main__':
+    app = MicVisualizerApp()
+    app.run()
