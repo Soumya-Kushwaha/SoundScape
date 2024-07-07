@@ -1,159 +1,114 @@
-import PySimpleGUI as sg
-import pyaudio
 import numpy as np
-import subprocess
+import pyaudio
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.widget import Widget
+from kivy.clock import Clock
+from kivy.graphics import Line, Color
 
-""" RealTime Audio Waveform plot """
-# VARS CONSTS:
-_VARS = {"window": False, "stream": False, "audioData": np.array([]), "current_visualizer_process": None}
+# Constants
+CHUNK = 1024
+RATE = 44100
 
-# PySimpleGUI INIT:
-AppFont = "Any 16"
-sg.theme("DarkBlue3")
+class WaveformWidget(Widget):
+    def __init__(self, **kwargs):
+        super(WaveformWidget, self).__init__(**kwargs)
+        self.points = []
 
-menu_layout = [
-    ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time']],
-]
+    def update(self, data):
+        self.canvas.clear()
+        with self.canvas:
+            Color(1, 0, 0)
+            self.points = []
+            for i in range(len(data)):
+                self.points.append((self.width * i / len(data), self.height / 2 + data[i] / 32768 * self.height / 2))
+            Line(points=self.points)
 
-layout = [
-    [sg.Menu(menu_layout)],
-    [
-        sg.Graph(
-            canvas_size=(500, 500),
-            graph_bottom_left=(-2, -2),
-            graph_top_right=(102, 102),
-            background_color="#809AB6",
-            key="graph",
-        )
-    ],
-    [sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
-    [
-        sg.Button("Listen", font=AppFont),
-        sg.Button("Stop", font=AppFont, disabled=True),
-        sg.Button("Exit", font=AppFont),
-    ],
-]
-_VARS["window"] = sg.Window("Mic to waveform plot + Max Level", layout, finalize=True)
-graph = _VARS["window"]["graph"]
-
-# INIT vars:
-CHUNK = 1024  # Samples: 1024,  512, 256, 128
-RATE = 44100  # Equivalent to Human Hearing at 40 kHz
-INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
-TIMEOUT = 10  # In ms for the event loop
-pAud = pyaudio.PyAudio()
-
-try:
-    pAud.get_device_info_by_index(0)
-except pyaudio.CoreError as e:
-    print(f"Error initializing PyAudio: {e}")
-    pAud = None
-
-# PySimpleGUI plots:
-def drawAxis(dataRangeMin=0, dataRangeMax=100):
-
-    # Y Axis
-
-    graph.DrawLine((0, 50), (100, 50))
-
-    # X Axis
-
-    graph.DrawLine((0, dataRangeMin), (0, dataRangeMax))
-
-# pyaudio stream:
-def stop():
-    if _VARS["stream"]:
-        _VARS["stream"].stop_stream()
-        _VARS["stream"].close()
-        _VARS["stream"] = None
-        _VARS["window"]["-PROG-"].update(0)
-        _VARS["window"]["Stop"].Update(disabled=True)
-        _VARS["window"]["Listen"].Update(disabled=False)
-
-# callback:
-def callback(in_data, frame_count, time_info, status):
-    _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
-    return (in_data, pyaudio.paContinue)
-
-def listen():
-    _VARS["window"]["Stop"].Update(disabled=False)
-    _VARS["window"]["Listen"].Update(disabled=True)
-    _VARS["stream"] = pAud.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=RATE,
-        input=True,
-        frames_per_buffer=CHUNK,
-        stream_callback=callback,
-    )
-    _VARS["stream"].start_stream()
-
-def close_current_visualizer():
-    if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
-        _VARS["current_visualizer_process"].terminate()
-        _VARS["current_visualizer_process"].wait()
-        _VARS["current_visualizer_process"] = None
-
-# INIT:
-drawAxis()
-
-# MAIN LOOP
-while True:
+class AudioVisualizerApp(App):
     
-    event, values = _VARS["window"].read(timeout=TIMEOUT)
-    if event in (sg.WIN_CLOSED, "Exit"):
-        close_current_visualizer()
-        stop()
-        pAud.terminate()
-        break
-
-    if event == "Listen":
-        listen()
-
-    if event == "Stop":
-        stop()
-
-    if event == 'Amplitude-Frequency-Visualizer':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
-        _VARS["window"].close()  
-        break  
-    if event == 'Waveform':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
-        _VARS["window"].close()  
-        break  
-    if event == 'Spectrogram':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectogram.py'])
-        _VARS["window"].close()  
-        break 
-    if event == 'Intensity-vs-Frequency-and-time':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
-        _VARS["window"].close()  
-        break 
-
-    # Along with the global audioData variable, this bit updates the waveform plot
-    elif _VARS["audioData"].size != 0:
-        # Update volume meter
-        _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
-        # Redraw plot
-        graph.erase()
-        drawAxis()
-
+    def build(self):
+        # Initialize PyAudio
+        self.pAud = pyaudio.PyAudio()
+        try:
+            self.pAud.get_device_info_by_index(0)
+        except pyaudio.PyAudioError as e:
+            print(f"Error initializing PyAudio: {e}")
+            self.pAud = None
         
-        # Here we go through the points in the audioData object and draw them
+        # Main layout
+        self.layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Waveform widget
+        self.waveform = WaveformWidget()
+        
+        # Buttons
+        self.listen_button = Button(text='Listen', size_hint=(None, None), size=(100, 50))
+        self.listen_button.bind(on_press=self.listen)
+        
+        self.stop_button = Button(text='Stop', size_hint=(None, None), size=(100, 50), disabled=True)
+        self.stop_button.bind(on_press=self.stop)
+        
+        self.exit_button = Button(text='Exit', size_hint=(None, None), size=(100, 50))
+        self.exit_button.bind(on_press=self.close_app)
+        
+        self.button_layout = BoxLayout(size_hint=(1, None), height=50, spacing=10)
+        self.button_layout.add_widget(self.listen_button)
+        self.button_layout.add_widget(self.stop_button)
+        self.button_layout.add_widget(self.exit_button)
+        
+        self.layout.add_widget(self.waveform)
+        self.layout.add_widget(self.button_layout)
+        
+        Clock.schedule_interval(self.update_plot, 1.0 / 30.0)  # Update plot every 1/30th of a second
+        
+        return self.layout
+    
+    def update_plot(self, dt):
+        if hasattr(self, 'audioData') and self.audioData.size != 0:
+            self.waveform.update(self.audioData)
+    
+    def listen(self, instance):
+        self.stop_button.disabled = False
+        self.listen_button.disabled = True
+        if self.pAud:
+            try:
+                self.stream = self.pAud.open(
+                    format=pyaudio.paInt16,
+                    channels=1,
+                    rate=RATE,
+                    input=True,
+                    frames_per_buffer=CHUNK,
+                    stream_callback=self.callback,
+                )
+                self.stream.start_stream()
+            except pyaudio.PyAudioError as e:
+                print(f"Error opening stream: {e}")
+                self.listen_button.disabled = False
+                self.stop_button.disabled = True
+    
+    def stop(self, instance=None):
+        if hasattr(self, 'stream'):
+            self.stream.stop_stream()
+            self.stream.close()
+            del self.stream
+            self.stop_button.disabled = True
+            self.listen_button.disabled = False
+    
+    def callback(self, in_data, frame_count, time_info, status):
+        self.audioData = np.frombuffer(in_data, dtype=np.int16)
+        return (in_data, pyaudio.paContinue)
+    
+    def close_app(self, instance):
+        self.stop()
+        if self.pAud:
+            self.pAud.terminate()
+        App.get_running_app().stop()
+    
+    def run_visualizer(self, visualizer):
+        self.stop()
+        subprocess.Popen(['python', visualizer])
+        self.close_app(None)
 
-        # Note that we are rescaling ( dividing by 100 ) and centering (+50)
-
-        # try different values to get a feel for what they do.
-        for x in range(CHUNK):
-            graph.DrawCircle(
-                (x, (_VARS["audioData"][x] / 100) + 50),
-                0.4,
-                line_color="blue",
-                fill_color="blue",
-            )
-
-_VARS["window"].close()
+if __name__ == '__main__':
+    AudioVisualizerApp().run()
