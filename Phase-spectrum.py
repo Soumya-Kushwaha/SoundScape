@@ -11,23 +11,25 @@ from scipy.fft import fft, fftfreq, fftshift
 # VARS CONSTS:
 
 _VARS = {
-    "window": False,
-    "stream": False,
-    "audioData": np.array([]),
-    "audioBuffer": np.array([]),
-    "current_visualizer_process": None,
+    "window": False,  # Variable to hold the PySimpleGUI window object
+    "stream": False,  # Variable to hold the PyAudio stream object
+    "audioData": np.array([]),  # Array to store incoming audio data samples
+    "audioBuffer": np.array([]),  # Buffer to accumulate all recorded audio data
+    "current_visualizer_process": None,  # Process handle for the currently running visualizer subprocess
 }
 
 # PySimpleGUI INIT:
-AppFont = "Helvetica"
-sg.theme("DarkBlue3")
+AppFont = "Helvetica"  # Font style for the GUI
+sg.theme("DarkBlue3")  # Setting the PySimpleGUI theme
 
+# Menu layout for visualizers
 menu_layout = [
     ['Run Visualizers', ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time', 'Phase-Spectrum']],
 ]
 
+# Layout structure for the main window
 layout = [
-    [sg.Menu(menu_layout)],
+    [sg.Menu(menu_layout)],  # Menu bar to run different visualizers
     [
         sg.Graph(
             canvas_size=(600, 600),
@@ -39,7 +41,7 @@ layout = [
         )
     ],
     [sg.Text("Progress:", text_color='white', font=('Helvetica', 15, 'bold')), sg.ProgressBar(4000, orientation="h", size=(20, 20), key="-PROG-")],
-    [
+    [  # Control buttons for audio recording
         sg.Button("Listen", font=AppFont, tooltip="Start listening"),
         sg.Button("Pause", font=AppFont, disabled=True, tooltip="Pause listening"),
         sg.Button("Resume", font=AppFont, disabled=True, tooltip="Resume listening"),
@@ -49,25 +51,28 @@ layout = [
     ],
 ]
 
+# Creating the PySimpleGUI window
 _VARS["window"] = sg.Window("Mic to phase spectrum plot", layout, finalize=True)
-graph = _VARS["window"]["graph"]
+graph = _VARS["window"]["graph"]  # Graph element for displaying the phase spectrum
 
 # INIT vars:
-CHUNK = 1024  # Samples: 1024,  512, 256, 128
-RATE = 44100  # Equivalent to Human Hearing at 40 kHz
-INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
-TIMEOUT = 10  # In ms for the event loop
-pAud = pyaudio.PyAudio()
+CHUNK = 1024  # Samples per chunk for audio processing
+RATE = 44100  # Sampling rate in Hz
+INTERVAL = 1  # Sampling interval in seconds
+TIMEOUT = 10  # Timeout in milliseconds for event handling
+pAud = pyaudio.PyAudio()  # PyAudio instance for audio input/output
 
 # FUNCTIONS:
 
 def draw_figure(canvas, figure):
+    """Draws a matplotlib figure onto a PySimpleGUI canvas."""
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
     figure_canvas_agg.draw()
     figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
     return figure_canvas_agg
 
 def stop():
+    """Stops the audio stream and resets UI elements."""
     if _VARS["stream"]:
         _VARS["stream"].stop_stream()
         _VARS["stream"].close()
@@ -77,29 +82,33 @@ def stop():
         _VARS["window"]["Listen"].Update(disabled=False)
 
 def pause():
+    """Pauses the audio stream."""
     if _VARS["stream"] and _VARS["stream"].is_active():
         _VARS["stream"].stop_stream()
         _VARS["window"]["Pause"].Update(disabled=True)
         _VARS["window"]["Resume"].Update(disabled=False)
 
 def resume():
+    """Resumes the paused audio stream."""
     if _VARS["stream"] and not _VARS["stream"].is_active():
         _VARS["stream"].start_stream()
         _VARS["window"]["Pause"].Update(disabled=False)
         _VARS["window"]["Resume"].Update(disabled=True)
 
 def save():
-    # Ask the user for a directory to save the image file
+    """Saves the current phase spectrum plot and recorded audio to files."""
+    # Ask the user for a directory to save the files
     folder = sg.popup_get_folder('Please select a directory to save the files')
     if folder:
-        # Save the figure as an image file
+        # Save the phase spectrum plot as an image file
         fig.savefig(f'{folder}/phase_spectrum_output.png')
         sg.popup('Success', f'Image saved as {folder}/phase_spectrum_output.png')
-        # Save the recorded audio data to a file
+        # Save the recorded audio data to a WAV file
         sf.write(f'{folder}/phase_spectrum_output.wav', _VARS["audioBuffer"], RATE)
         sg.popup('Success', f'Audio saved as {folder}/phase_spectrum_output.wav')
 
 def callback(in_data, frame_count, time_info, status):
+    """Callback function for audio stream processing."""
     try:
         _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
         _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], _VARS["audioData"])
@@ -109,6 +118,7 @@ def callback(in_data, frame_count, time_info, status):
     return (in_data, pyaudio.paContinue)
 
 def listen():
+    """Starts the audio stream for listening."""
     try:
         _VARS["window"]["Stop"].Update(disabled=False)
         _VARS["window"]["Pause"].Update(disabled=False)
@@ -126,6 +136,7 @@ def listen():
         sg.popup_error(f"Error: {e}")
 
 def close_current_visualizer():
+    """Closes the currently running visualizer subprocess."""
     if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
         _VARS["current_visualizer_process"].kill()
 
@@ -136,6 +147,8 @@ fig_agg = draw_figure(graph.TKCanvas, fig)  # draw the figure on the graph
 # MAIN LOOP
 while True:
     event, values = _VARS["window"].read(timeout=TIMEOUT)
+
+    # Handling different GUI events
     if event == "Exit" or event == sg.WIN_CLOSED:
         stop()
         pAud.terminate()
@@ -151,32 +164,11 @@ while True:
         stop()
     if event == "Save":
         save()
-    if event == 'Amplitude-Frequency-Visualizer':
+    if event in ['Amplitude-Frequency-Visualizer', 'Waveform', 'Spectrogram', 'Intensity-vs-Frequency-and-time', 'Phase-Spectrum']:
         close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Amplitude-Frequency-Visualizer.py'])
+        _VARS["current_visualizer_process"] = subprocess.Popen(['python', f'{event}.py'])
         _VARS["window"].close()
-        break 
-    if event == 'Waveform':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Waveform.py'])
-        _VARS["window"].close()
-        break 
-    if event == 'Spectrogram':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Spectrogram.py'])
-        _VARS["window"].close()
-        break 
-    if event == 'Intensity-vs-Frequency-and-time':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Intensity-vs-Frequency-and-time.py'])
-        _VARS["window"].close()
-        break 
-    if event == 'Phase-Spectrum':
-        close_current_visualizer()
-        _VARS["current_visualizer_process"] = subprocess.Popen(['python', 'Phase-Spectrum.py'])
-        _VARS["window"].close()
-        break   
-
+        break
     elif _VARS["audioData"].size != 0:
         try:
             _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))

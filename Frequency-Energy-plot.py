@@ -9,10 +9,11 @@ import matplotlib.pyplot as plt
 # VARS CONSTS:
 _VARS = {"window": False, "stream": False, "audioData": np.array([]), "audioBuffer": np.array([])}
 
-# pysimpleGUI INIT:
+# PySimpleGUI INIT:
 AppFont = "Helvetica"
 sg.theme("DarkBlue3")
 
+# Layout for the GUI
 layout = [
     [
         sg.Graph(
@@ -35,24 +36,27 @@ layout = [
     ],
 ]
 
+# Create the main window
 _VARS["window"] = sg.Window("Mic to Frequency vs Energy plot", layout, finalize=True)  
 graph = _VARS["window"]["graph"]
 
 # INIT vars:
-CHUNK = 1024  # Samples: 1024,  512, 256, 128
-RATE = 44100  # Equivalent to Human Hearing at 40 kHz
-INTERVAL = 1  # Sampling Interval in Seconds -> Interval to listen
-TIMEOUT = 10  # In ms for the event loop
-pAud = pyaudio.PyAudio()
+CHUNK = 1024  # Number of samples per frame
+RATE = 44100  # Sampling rate in Hz
+INTERVAL = 1  # Sampling interval in seconds
+TIMEOUT = 10  # Event loop timeout in ms
+pAud = pyaudio.PyAudio()  # Initialize PyAudio
 
 # FUNCTIONS:
 
+# Function to draw a figure on the canvas
 def draw_figure(canvas, figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
     figure_canvas_agg.draw()
     figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
     return figure_canvas_agg
 
+# Function to stop the audio stream
 def stop():
     if _VARS["stream"]:
         _VARS["stream"].stop_stream()
@@ -61,48 +65,53 @@ def stop():
         _VARS["window"]["Stop"].Update(disabled=True)
         _VARS["window"]["Listen"].Update(disabled=False)
 
+# Function to pause the audio stream
 def pause():
     if _VARS["stream"].is_active():
         _VARS["stream"].stop_stream()
         _VARS["window"]["Pause"].Update(disabled=True)
         _VARS["window"]["Resume"].Update(disabled=False)
 
+# Function to resume the audio stream
 def resume():
     if not _VARS["stream"].is_active():
         _VARS["stream"].start_stream()
         _VARS["window"]["Pause"].Update(disabled=False)
         _VARS["window"]["Resume"].Update(disabled=True)
 
+# Function to save the plot and audio data
 def save():
-    # Ask the user for a directory to save the image file
+    # Ask the user for a directory to save the files
     folder = sg.popup_get_folder('Please select a directory to save the files')
     if folder:
-        # Save the figure as an image file
+        # Save the plot as an image file
         fig.savefig(f'{folder}/output.png')
         sg.popup('Success', f'Image saved as {folder}/output.png')
-        # Save the recorded audio data to a file
+        # Save the recorded audio data as a WAV file
         sf.write(f'{folder}/output.wav', _VARS["audioBuffer"], RATE)
         sg.popup('Success', f'Audio saved as {folder}/output.wav')
 
+# Callback function for the audio stream
 def callback(in_data, frame_count, time_info, status):
     _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
     _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], _VARS["audioData"])
     return (in_data, pyaudio.paContinue)
 
+# Function to start listening to the audio stream
 def listen():
     _VARS["window"]["Stop"].Update(disabled=False)
     _VARS["window"]["Listen"].Update(disabled=True)
     _VARS["stream"] = pAud.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=RATE,
-        input=True,
-        frames_per_buffer=CHUNK,
-        stream_callback=callback,
+        format=pyaudio.paInt16,  # Audio format
+        channels=1,  # Number of audio channels
+        rate=RATE,  # Sampling rate
+        input=True,  # Input stream
+        frames_per_buffer=CHUNK,  # Number of samples per frame
+        stream_callback=callback,  # Callback function
     )
-    _VARS["stream"].start_stream()
+    _VARS["stream"].start_stream()  # Start the audio stream
 
-# INIT:
+# Initialize the plot
 fig, ax = plt.subplots()  
 fig_agg = draw_figure(graph.TKCanvas, fig) 
 
@@ -113,7 +122,7 @@ while True:
         stop()
         pAud.terminate()
         break
-    # for handling the closing of application
+    # Handle closing of the application
     if event == sg.WIN_CLOSED :
         _VARS["stream"].stop_stream()
         _VARS["stream"].close()
@@ -137,7 +146,7 @@ while True:
         xx = np.linspace(0.0, RATE / 2, CHUNK // 2)  
         ax.clear()  
         
-        # Calculating the energy 
+        # Calculate the energy spectrum
         energy = np.abs(yy[:CHUNK // 2]) ** 2
 
         # Plot frequency vs energy
@@ -149,4 +158,4 @@ while True:
         
         ax.grid(True)  # Enable gridlines
         ax.legend()  # Add a legend
-        fig_agg.draw()  # redraw the figure
+        fig_agg.draw()  # Redraw the figure

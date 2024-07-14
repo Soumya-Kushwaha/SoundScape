@@ -14,16 +14,18 @@ RATE = 44100
 class WaveformWidget(Widget):
     def __init__(self, **kwargs):
         super(WaveformWidget, self).__init__(**kwargs)
-        self.points = []
+        self.points = []  # Initialize points list for drawing waveform
 
     def update(self, data):
-        self.canvas.clear()
+        """Update method to redraw waveform based on new audio data."""
+        self.canvas.clear()  # Clear previous drawing on the canvas
         with self.canvas:
-            Color(1, 0, 0)
-            self.points = []
+            Color(1, 0, 0)  # Set drawing color to red
+            self.points = []  # Reset points list
             for i in range(len(data)):
+                # Calculate points based on audio data and widget dimensions
                 self.points.append((self.width * i / len(data), self.height / 2 + data[i] / 32768 * self.height / 2))
-            Line(points=self.points)
+            Line(points=self.points)  # Draw line using calculated points
 
 class AudioVisualizerApp(App):
     
@@ -44,13 +46,13 @@ class AudioVisualizerApp(App):
         
         # Buttons
         self.listen_button = Button(text='Listen', size_hint=(None, None), size=(100, 50))
-        self.listen_button.bind(on_press=self.listen)
+        self.listen_button.bind(on_press=self.listen)  # Bind listen method to button press
         
         self.stop_button = Button(text='Stop', size_hint=(None, None), size=(100, 50), disabled=True)
-        self.stop_button.bind(on_press=self.stop)
+        self.stop_button.bind(on_press=self.stop)  # Bind stop method to button press
         
         self.exit_button = Button(text='Exit', size_hint=(None, None), size=(100, 50))
-        self.exit_button.bind(on_press=self.close_app)
+        self.exit_button.bind(on_press=self.close_app)  # Bind close_app method to button press
         
         self.button_layout = BoxLayout(size_hint=(1, None), height=50, spacing=10)
         self.button_layout.add_widget(self.listen_button)
@@ -60,17 +62,19 @@ class AudioVisualizerApp(App):
         self.layout.add_widget(self.waveform)
         self.layout.add_widget(self.button_layout)
         
-        Clock.schedule_interval(self.update_plot, 1.0 / 30.0)  # Update plot every 1/30th of a second
+        Clock.schedule_interval(self.update_plot, 1.0 / 30.0)  # Schedule plot update every 1/30th of a second
         
         return self.layout
     
     def update_plot(self, dt):
+        """Periodically update the waveform plot."""
         if hasattr(self, 'audioData') and self.audioData.size != 0:
-            self.waveform.update(self.audioData)
+            self.waveform.update(self.audioData)  # Update waveform widget with latest audio data
     
     def listen(self, instance):
-        self.stop_button.disabled = False
-        self.listen_button.disabled = True
+        """Start listening to audio input."""
+        self.stop_button.disabled = False  # Enable stop button
+        self.listen_button.disabled = True  # Disable listen button
         if self.pAud:
             try:
                 self.stream = self.pAud.open(
@@ -79,36 +83,40 @@ class AudioVisualizerApp(App):
                     rate=RATE,
                     input=True,
                     frames_per_buffer=CHUNK,
-                    stream_callback=self.callback,
+                    stream_callback=self.callback,  # Set callback function for audio stream
                 )
-                self.stream.start_stream()
+                self.stream.start_stream()  # Start audio stream
             except pyaudio.PyAudioError as e:
                 print(f"Error opening stream: {e}")
-                self.listen_button.disabled = False
-                self.stop_button.disabled = True
+                self.listen_button.disabled = False  # Re-enable listen button on error
+                self.stop_button.disabled = True  # Disable stop button on error
     
     def stop(self, instance=None):
+        """Stop audio input."""
         if hasattr(self, 'stream'):
-            self.stream.stop_stream()
-            self.stream.close()
-            del self.stream
-            self.stop_button.disabled = True
-            self.listen_button.disabled = False
+            self.stream.stop_stream()  # Stop audio stream
+            self.stream.close()  # Close audio stream
+            del self.stream  # Delete stream object
+            self.stop_button.disabled = True  # Disable stop button
+            self.listen_button.disabled = False  # Enable listen button
     
     def callback(self, in_data, frame_count, time_info, status):
-        self.audioData = np.frombuffer(in_data, dtype=np.int16)
-        return (in_data, pyaudio.paContinue)
+        """Callback function for audio stream processing."""
+        self.audioData = np.frombuffer(in_data, dtype=np.int16)  # Convert input data to numpy array
+        return (in_data, pyaudio.paContinue)  # Return input data to continue audio stream
     
     def close_app(self, instance):
-        self.stop()
+        """Close the application."""
+        self.stop()  # Stop audio stream
         if self.pAud:
-            self.pAud.terminate()
-        App.get_running_app().stop()
+            self.pAud.terminate()  # Terminate PyAudio instance
+        App.get_running_app().stop()  # Stop the Kivy application
     
     def run_visualizer(self, visualizer):
-        self.stop()
-        subprocess.Popen(['python', visualizer])
-        self.close_app(None)
+        """Run an external visualizer."""
+        self.stop()  # Stop audio stream
+        subprocess.Popen(['python', visualizer])  # Launch external visualizer
+        self.close_app(None)  # Close the application
 
 if __name__ == '__main__':
-    AudioVisualizerApp().run()
+    AudioVisualizerApp().run()  # Run the Kivy application
