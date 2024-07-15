@@ -18,23 +18,22 @@ class SoundScapeApp(App):
         self.current_visualizer_process = None
 
         layout = BoxLayout(orientation='vertical', padding=20, spacing=20)
-        
-        self.graph = BoxLayout()
-        self.graph.canvas.add(Color(0.5, 0.5, 0.5, 1))
-        self.graph.canvas.add(Rectangle(size=(500, 500)))
+
+        self.graph = BoxLayout(size_hint=(1, 0.6))
+        self.graph.bind(size=self.update_heatmap_size)
 
         self.progress_bar = ProgressBar(max=4000, size_hint=(1, None), height=20)
-        
+
         btn_layout = BoxLayout(size_hint=(1, None), height=50)
-        self.listen_btn = Button(text="Listen", on_press=self.listen)
-        self.stop_btn = Button(text="Stop", on_press=self.stop, disabled=True)
-        self.exit_btn = Button(text="Exit", on_press=self.stop)
+        self.listen_btn = Button(text="Listen", on_press=self.listen, font_size=20)
+        self.stop_btn = Button(text="Stop", on_press=self.stop, disabled=True, font_size=20)
+        self.exit_btn = Button(text="Exit", on_press=self.stop, font_size=20)
 
         btn_layout.add_widget(self.listen_btn)
         btn_layout.add_widget(self.stop_btn)
         btn_layout.add_widget(self.exit_btn)
 
-        layout.add_widget(Label(text="Mic to Sound Intensity vs Frequency heatmap", font_size=24, size_hint=(1, 0.1)))
+        layout.add_widget(Label(text="Mic to Sound Intensity vs Frequency Heatmap", font_size=30, size_hint=(1, 0.1)))
         layout.add_widget(self.graph)
         layout.add_widget(self.progress_bar)
         layout.add_widget(btn_layout)
@@ -91,14 +90,16 @@ class SoundScapeApp(App):
     def draw_heatmap(self, intensity_data):
         self.graph.canvas.clear()
         rows, cols = intensity_data.shape
+        graph_width, graph_height = self.graph.size
+
         for row in range(rows):
             for col in range(cols):
                 intensity = intensity_data[row, col]
                 color = self.get_heatmap_color(intensity)
-                x1 = col * 500 / cols
-                y1 = 500 - (row + 1) * 500 / rows
-                x2 = x1 + 500 / cols
-                y2 = y1 + 500 / rows
+                x1 = col * graph_width / cols
+                y1 = graph_height - (row + 1) * graph_height / rows
+                x2 = x1 + graph_width / cols
+                y2 = y1 + graph_height / rows
                 with self.graph.canvas:
                     Color(*color)
                     Rectangle(pos=(x1, y1), size=(x2 - x1, y2 - y1))
@@ -110,10 +111,14 @@ class SoundScapeApp(App):
         intensity_norm = np.log1p(intensity) / 20
         color_index = min(int(intensity_norm * len(cmap)), len(cmap) - 1)
         return cmap[color_index]
-if __name__=='__main__':
-    CHUNK=1024
-    RATE=44100
-    INTERVAL=1
-    TIMEOUT=10
+
+    def update_heatmap_size(self, instance, value):
+        self.draw_heatmap(np.zeros((10, 10)))
+
+if __name__ == '__main__':
+    CHUNK = 1024
+    RATE = 44100
+    INTERVAL = 1
+    TIMEOUT = 10
     pAud = pyaudio.PyAudio()
     SoundScapeApp().run()

@@ -18,10 +18,10 @@ import io
 _VARS = {"stream": None, "audioData": np.array([])}
 CHUNK = 1024
 RATE = 44100
-pAud = pyaudio.PyAudio()
 
-# Check if audio input is available
+# Initialize PyAudio
 try:
+    pAud = pyaudio.PyAudio()
     pAud.get_device_info_by_index(0)
 except pyaudio.PyAudioError as e:
     print(f"Error initializing PyAudio: {e}")
@@ -32,21 +32,32 @@ def callback(in_data, frame_count, time_info, status):
     return (in_data, pyaudio.paContinue)
 
 def listen():
-    _VARS["stream"] = pAud.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=RATE,
-        input=True,
-        frames_per_buffer=CHUNK,
-        stream_callback=callback,
-    )
-    _VARS["stream"].start_stream()
+    if pAud:
+        try:
+            _VARS["stream"] = pAud.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=RATE,
+                input=True,
+                frames_per_buffer=CHUNK,
+                stream_callback=callback,
+            )
+            _VARS["stream"].start_stream()
+        except Exception as e:
+            print(f"Error starting audio stream: {e}")
+            _VARS["stream"] = None
+    else:
+        print("PyAudio is not initialized.")
 
 def stop():
     if _VARS["stream"]:
-        _VARS["stream"].stop_stream()
-        _VARS["stream"].close()
-        _VARS["stream"] = None
+        try:
+            _VARS["stream"].stop_stream()
+            _VARS["stream"].close()
+        except Exception as e:
+            print(f"Error stopping audio stream: {e}")
+        finally:
+            _VARS["stream"] = None
 
 class SpectrogramApp(App):
     def build(self):
@@ -84,10 +95,13 @@ class SpectrogramApp(App):
 
     def on_listen(self, instance):
         listen()
-        self.listen_button.disabled = True
-        self.stop_button.disabled = False
-        self.save_button.disabled = False
-        self.event = Clock.schedule_interval(self.update, 0.1)
+        if _VARS["stream"]:
+            self.listen_button.disabled = True
+            self.stop_button.disabled = False
+            self.save_button.disabled = False
+            self.event = Clock.schedule_interval(self.update, 0.1)
+        else:
+            print("Failed to start listening.")
 
     def on_stop(self, instance):
         stop()
@@ -117,7 +131,8 @@ class SpectrogramApp(App):
 
     def on_exit(self, instance):
         stop()
-        pAud.terminate()
+        if pAud:
+            pAud.terminate()
         App.get_running_app().stop()
 
     def save_figure(self, file_path):
