@@ -142,7 +142,7 @@ class SoundScapeApp(App):
         visualizer_scripts = {
             "Amplitude-Frequency Visualizer": "Amplitude-Frequency-Visualizer.py",
             "Waveform": "Waveform.py",
-            "Spectrogram": "Spectogram.py",
+            "Spectrogram": "Spectrogram.py",
             "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-Time.py",
             "Depth-Perspective Visualizer": "Depth-Perspective-Visualizer.py"  
         }
