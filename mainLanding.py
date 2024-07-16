@@ -46,7 +46,8 @@ class SoundScapeApp(App):
             "Amplitude-Frequency Visualizer",
             "Waveform",
             "Spectrogram",
-            "Intensity vs Frequency and Time"
+            "Intensity vs Frequency and Time",
+            "Depth-Perspective Visualizer"
         ]
         for visualizer in visualizers:
             button = Button(
@@ -142,7 +143,8 @@ class SoundScapeApp(App):
             "Amplitude-Frequency Visualizer": "Amplitude-Frequency-Visualizer.py",
             "Waveform": "Waveform.py",
             "Spectrogram": "Spectrogram.py",
-            "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-Time.py"
+            "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-Time.py",
+            "Depth-Perspective Visualizer": "Depth-Perspective-Visualizer.py"  
         }
         
         script_name = instance.text
