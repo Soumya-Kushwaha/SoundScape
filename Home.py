@@ -16,7 +16,7 @@ button_layout = [
     [sg.Button("Waveform", **button_style, pad=(10, 10))],
     [sg.Button("Spectrogram", **button_style, pad=(10, 10))],
     [sg.Button("Intensity vs Frequency and Time", **button_style, pad=(10, 10))],
-    [sg.Button("Real-Time VU Meter", **button_style, pad=(10, 10))],  # New button for Triangle Wave
+    [sg.Button("Real-Time VU Meter", **button_style, pad=(10, 10))],  # New button for Real-Time VU Meter
 ]
 
 # Layout for the main landing page
@@ -36,9 +36,9 @@ window = sg.Window("Welcome to SoundScape", layout, finalize=True, element_justi
 
 # Function to close the current visualizer process
 def close_current_visualizer(process):
-    if process and process.poll() is None:
-        process.kill()
-        process.wait()
+    if process and process.poll() is None:  # Check if the process is still running
+        process.kill()  # Terminate the process
+        process.wait()  # Wait for the process to terminate
 
 # Consolidated function to handle GUI updates
 def handle_event(event, process):
@@ -48,25 +48,25 @@ def handle_event(event, process):
         "Waveform": "Waveform.py",
         "Spectrogram": "Spectrogram.py",
         "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-time.py",
-        "Real-Time VU Meter": "Real-Time VU Meter.py",  # Added button for "Triangle Wave"
+        "Real-Time VU Meter": "Real-Time VU Meter.py",  # Script for Real-Time VU Meter
     }
 
-    if event in script_mapping:
-        close_current_visualizer(process)
-        script_name = script_mapping[event]
-        return subprocess.Popen([sys.executable, script_name])
+    if event in script_mapping:  # Check if the event matches any script
+        close_current_visualizer(process)  # Close the currently running visualizer process
+        script_name = script_mapping[event]  # Get the script name
+        return subprocess.Popen([sys.executable, script_name])  # Start the new visualizer process
     return process
 
 # Main loop
-current_visualizer_process = None
+current_visualizer_process = None  # Initialize the variable for the current visualizer process
 
 while True:
     event, values = window.read(timeout=100)  # Use a timeout to periodically check the process
 
-    if event in (sg.WIN_CLOSED, "Exit"):
-        close_current_visualizer(current_visualizer_process)
-        break
+    if event in (sg.WIN_CLOSED, "Exit"):  # Check if the window is closed or Exit button is pressed
+        close_current_visualizer(current_visualizer_process)  # Close the currently running visualizer process
+        break  # Exit the loop
 
-    current_visualizer_process = handle_event(event, current_visualizer_process)
+    current_visualizer_process = handle_event(event, current_visualizer_process)  # Handle the event
 
-window.close()
+window.close()  # Close the window

@@ -12,11 +12,12 @@ import os
 
 class SoundScapeApp(App):
     def build(self):
-        self.current_visualizer_process = None
+        self.current_visualizer_process = None  # Initialize the visualizer process
 
         # Define the initial layout
         layout = BoxLayout(orientation='vertical', padding=20, spacing=20)
 
+        # Title label
         title = Label(
             text="Welcome to SoundScape",
             font_size=32,
@@ -24,6 +25,7 @@ class SoundScapeApp(App):
             color=get_color_from_hex("#006064"),
             bold=True,
         )
+        # Subtitle label
         subtitle = Label(
             text="Explore various audio visualizers",
             font_size=24,
@@ -31,6 +33,7 @@ class SoundScapeApp(App):
             color=get_color_from_hex("#00838f"),
         )
 
+        # Description text input (read-only)
         description = TextInput(
             text=("SoundScape is an innovative application designed to transform audio data into stunning visualizations. "),
             readonly=True,
@@ -41,6 +44,7 @@ class SoundScapeApp(App):
             size_hint=(1, 0.3),
         )
 
+        # Button layout
         button_layout = BoxLayout(orientation='vertical', size_hint=(1, 0.3), spacing=10)
         visualizers = [
             "Amplitude-Frequency Visualizer",
@@ -49,6 +53,7 @@ class SoundScapeApp(App):
             "Intensity vs Frequency and Time",
             "Depth-Perspective Visualizer"
         ]
+        # Add buttons for each visualizer
         for visualizer in visualizers:
             button = Button(
                 text=visualizer,
@@ -64,6 +69,7 @@ class SoundScapeApp(App):
             button.bind(on_press=self.launch_visualizer)
             button_layout.add_widget(button)
 
+        # Button to change theme
         theme_button = Button(
             text="Change Theme",
             size_hint=(1, 0.1),
@@ -76,6 +82,7 @@ class SoundScapeApp(App):
         )
         theme_button.bind(on_press=self.change_theme)
 
+        # Exit button
         exit_button = Button(
             text="Exit",
             size_hint=(1, 0.1),
@@ -88,6 +95,7 @@ class SoundScapeApp(App):
         )
         exit_button.bind(on_press=self.stop)
 
+        # Add widgets to the layout
         layout.add_widget(title)
         layout.add_widget(subtitle)
         layout.add_widget(description)
@@ -96,21 +104,24 @@ class SoundScapeApp(App):
         layout.add_widget(exit_button)
 
         self.layout = layout
-        self.theme_index = 0
+        self.theme_index = 0  # Initialize theme index
 
+        # Set default background color
         with layout.canvas.before:
-            Color(1, 1, 1, 1)  # default background color
+            Color(1, 1, 1, 1)
             self.bg_rect = RoundedRectangle(size=layout.size, pos=layout.pos, radius=[20])
             layout.bind(size=self._update_rect, pos=self._update_rect)
 
         return layout
 
     def close_current_visualizer(self):
+        # Close the current visualizer process if running
         if self.current_visualizer_process and self.current_visualizer_process.poll() is None:
             self.current_visualizer_process.kill()
             self.current_visualizer_process.wait()
 
     def change_theme(self, instance):
+        # Change between light and dark themes
         themes = [
             {"bg_color": [1, 1, 1, 1], "fg_color": [0, 0, 0, 1]},  # Light theme
             {"bg_color": [0, 0, 0, 1], "fg_color": [1, 1, 1, 1]},  # Dark theme
@@ -118,12 +129,14 @@ class SoundScapeApp(App):
         self.theme_index = (self.theme_index + 1) % len(themes)
         theme = themes[self.theme_index]
 
+        # Update the background color
         self.layout.canvas.before.clear()
         with self.layout.canvas.before:
             Color(*theme["bg_color"])
             self.bg_rect = RoundedRectangle(size=self.layout.size, pos=self.layout.pos, radius=[20])
         self._update_rect(self.layout, None)
 
+        # Update the color of all children widgets
         for child in self.layout.children:
             if isinstance(child, Label):
                 child.color = theme["fg_color"]
@@ -135,10 +148,12 @@ class SoundScapeApp(App):
                 child.foreground_color = theme["fg_color"]
 
     def _update_rect(self, instance, value):
+        # Update the background rectangle size and position
         self.bg_rect.pos = instance.pos
         self.bg_rect.size = instance.size
 
     def launch_visualizer(self, instance):
+        # Launch the visualizer script based on the button text
         visualizer_scripts = {
             "Amplitude-Frequency Visualizer": "Amplitude-Frequency-Visualizer.py",
             "Waveform": "Waveform.py",

@@ -17,48 +17,51 @@ import scipy.fft
 import matplotlib.pyplot as plt
 import os
 
-# vars:
+# Dictionary to hold global variables
 _VARS = {
-    "stream": None,
-    "audioData": np.array([]),
-    "audioBuffer": np.array([]),
-    "current_visualizer_process": None,
+    "stream": None,  # Audio stream
+    "audioData": np.array([]),  # Current audio data
+    "audioBuffer": np.array([]),  # Buffer to store all audio data
+    "current_visualizer_process": None,  # Placeholder for visualizer process
 }
 
-# INIT vars:
-CHUNK = 1024
-RATE = 44100
-pAud = pyaudio.PyAudio()
+# Constants for audio processing
+CHUNK = 1024  # Number of audio samples per frame
+RATE = 44100  # Sampling rate (samples per second)
+pAud = pyaudio.PyAudio()  # Initialize PyAudio
 
-# FUNCTIONS:
+# Function to stop audio streaming
 def stop(instance):
     if _VARS["stream"]:
-        _VARS["stream"].stop_stream()
-        _VARS["stream"].close()
+        _VARS["stream"].stop_stream()  # Stop the stream
+        _VARS["stream"].close()  # Close the stream
         _VARS["stream"] = None
-        progress_bar.value = 0
+        progress_bar.value = 0  # Reset the progress bar
         btn_listen.disabled = False
         btn_pause.disabled = True
         btn_resume.disabled = True
         btn_stop.disabled = True
         btn_save.disabled = True
 
+# Function to pause audio streaming
 def pause(instance):
     if _VARS["stream"] and _VARS["stream"].is_active():
-        _VARS["stream"].stop_stream()
+        _VARS["stream"].stop_stream()  # Stop the stream
         btn_pause.disabled = True
         btn_resume.disabled = False
 
+# Function to resume audio streaming
 def resume(instance):
     if _VARS["stream"] and not _VARS["stream"].is_active():
-        _VARS["stream"].start_stream()
+        _VARS["stream"].start_stream()  # Start the stream
         btn_pause.disabled = False
         btn_resume.disabled = True
 
+# Function to save audio and plot data
 def save(instance):
     folder = 'saved_files'
     if not os.path.exists(folder):
-        os.makedirs(folder)
+        os.makedirs(folder)  # Create folder if it doesn't exist
     try:
         # Save the plot as an image file
         fig.savefig(f'{folder}/output.png')
@@ -70,36 +73,41 @@ def save(instance):
     except Exception as e:
         popup_message('Error saving files', str(e))
 
+# Callback function to handle audio stream input
 def callback(in_data, frame_count, time_info, status):
-    _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)
-    _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], _VARS["audioData"])
+    _VARS["audioData"] = np.frombuffer(in_data, dtype=np.int16)  # Convert audio data to NumPy array
+    _VARS["audioBuffer"] = np.append(_VARS["audioBuffer"], _VARS["audioData"])  # Append data to buffer
     return (in_data, pyaudio.paContinue)
 
+# Function to start listening to audio
 def listen(instance):
     try:
         btn_listen.disabled = True
         btn_pause.disabled = False
         btn_stop.disabled = False
         _VARS["stream"] = pAud.open(
-            format=pyaudio.paInt16,
-            channels=1,
-            rate=RATE,
-            input=True,
-            frames_per_buffer=CHUNK,
-            stream_callback=callback,
+            format=pyaudio.paInt16,  # Audio format
+            channels=1,  # Number of audio channels
+            rate=RATE,  # Sampling rate
+            input=True,  # Set stream as input
+            frames_per_buffer=CHUNK,  # Number of samples per frame
+            stream_callback=callback,  # Set callback function
         )
-        _VARS["stream"].start_stream()
+        _VARS["stream"].start_stream()  # Start the audio stream
     except Exception as e:
         popup_message('Error starting the stream', str(e))
 
+# Function to close the current visualizer process
 def close_current_visualizer():
     if _VARS["current_visualizer_process"] and _VARS["current_visualizer_process"].poll() is None:
-        _VARS["current_visualizer_process"].kill()
+        _VARS["current_visualizer_process"].kill()  # Terminate the visualizer process
 
+# Function to display a popup message
 def popup_message(title, message):
     popup = Popup(title=title, content=Label(text=message), size_hint=(0.8, 0.8))
     popup.open()
 
+# Main application class
 class MicVisualizerApp(App):
     def build(self):
         global progress_bar, btn_listen, btn_pause, btn_resume, btn_stop, btn_save, fig, ax, canvas_img
@@ -164,23 +172,23 @@ class MicVisualizerApp(App):
         settings_tab.add_widget(settings_layout)
         tab_panel.add_widget(settings_tab)
 
-        Clock.schedule_interval(self.update_plot, 0.1)
+        Clock.schedule_interval(self.update_plot, 0.1)  # Schedule plot update
 
         return tab_panel
 
     def apply_settings(self, instance):
         global RATE, CHUNK
         try:
-            RATE = int(self.rate_input.text)
-            CHUNK = int(self.chunk_input.text)
+            RATE = int(self.rate_input.text)  # Update sampling rate
+            CHUNK = int(self.chunk_input.text)  # Update chunk size
             popup_message('Settings Applied', 'Sample Rate and Chunk Size updated.')
         except ValueError:
             popup_message('Invalid Input', 'Please enter valid integer values.')
 
     def update_plot(self, dt):
         if _VARS["audioData"].size != 0:
-            progress_bar.value = np.amax(_VARS["audioData"])
-            yf = scipy.fft.fft(_VARS["audioData"])
+            progress_bar.value = np.amax(_VARS["audioData"])  # Update progress bar
+            yf = scipy.fft.fft(_VARS["audioData"])  # Perform FFT on audio data
             xf = np.linspace(0.0, RATE / 2, CHUNK // 2)
             ax.clear()
             energy = (2.0 / CHUNK * np.abs(yf[: CHUNK // 2]))**2  # Compute energy
@@ -193,7 +201,7 @@ class MicVisualizerApp(App):
             self.update_canvas()
 
     def update_canvas(self):
-        fig.canvas.draw()
+        fig.canvas.draw()  # Draw the canvas
         width, height = fig.canvas.get_width_height()
         buf = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
         buf = buf.reshape(height, width, 3)
@@ -205,10 +213,10 @@ class MicVisualizerApp(App):
         canvas_img.texture = texture
 
     def on_stop(self):
-        stop(None)
+        stop(None)  # Stop audio streaming
         if _VARS["current_visualizer_process"]:
             close_current_visualizer()
-        pAud.terminate()
+        pAud.terminate()  # Terminate PyAudio
 
 if __name__ == '__main__':
     app = MicVisualizerApp()
