@@ -1,6 +1,11 @@
 # 🎵 SoundScape 🎵
 
 Welcome to **SoundScape**! Dive into the world of real-time sound visualization and transform your audio experiences into stunning visual displays.
+SoundScape is an innovative project that provides various visualizations of audio features. It includes multiple visualizers such as Amplitude-Frequency Visualizer, Depth-Perspective Visualizer, Energy-Frequency Visualizer, and now, the new Chroma Feature Visualizer.
+
+
+## Introduction
+SoundScape offers real-time audio analysis and visualization tools that help users understand different audio characteristics through intuitive visual representations. It is designed for musicians, audio engineers, educators, and audio enthusiasts.
 
 ## 🌟 Features
 
@@ -31,6 +36,13 @@ Welcome to **SoundScape**! Dive into the world of real-time sound visualization 
   ```sh
   python mainLanding.py
   ```
+
+## Usage
+Run the visualizers by executing the respective Python scripts. For example:
+
+bash
+
+python Amplitude-Frequency-Visualizer.py
 
 ## 🎛️ Usage Example
   ```python
