@@ -43,6 +43,9 @@ buttons = [
     ("Waveform", "Waveform.py"),
     ("Amplitude vs Frequency", "Amplitude-Frequency-Visualizer.py"),
     ("Intensity vs Frequency", "Intensity-vs-Frequency-and-time.py")
+    ("Power spectral density curve", "Power-spectral-density.py")
+    ("Energy envelope-over-time", "Energyenvelope-over-time.py")
+
 ]
 
 # Create buttons in a matrix layout

@@ -132,7 +132,8 @@ def calculate_energy_envelope(signal, chunk_size=1024, decimation_factor=20):
     analytic_signal = hilbert(signal)
     amplitude_envelope = np.abs(analytic_signal)
     energy_envelope = decimate(amplitude_envelope, decimation_factor)
-    time_axis = np.arange(0, len(signal) / RATE, chunk_size / RATE * decimation_factor)
+    time_per_sample = decimation_factor / RATE
+    time_axis = np.arange(0, len(energy_envelope)) * time_per_sample
     return time_axis, energy_envelope
 
 # INIT:
@@ -178,11 +179,11 @@ while True:
         _VARS["window"].close()
         break    
 
-    elif _VARS["audioData"].size != 0:
+    elif _VARS["audioBuffer"].size != 0:
         try:
             _VARS["window"]["-PROG-"].update(np.amax(_VARS["audioData"]))
             ax.clear()
-            time_axis, energy_envelope = calculate_energy_envelope(_VARS["audioData"])
+            time_axis, energy_envelope = calculate_energy_envelope(_VARS["audioBuffer"])
             ax.plot(time_axis, energy_envelope, label='Energy Envelope')
             ax.set_title("Energy Envelope over Time")
             ax.set_ylabel("Energy")
