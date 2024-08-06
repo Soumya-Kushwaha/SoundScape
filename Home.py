@@ -18,6 +18,7 @@ button_layout = [
     [sg.Button("Intensity vs Frequency and Time", **button_style, pad=(10, 10))],
     [sg.Button("Real-Time VU Meter", **button_style, pad=(10, 10))],  # New button for Triangle Wave
     [sg.Button("Power spectral density curve", **button_style, pad=(10, 10))],  
+    [sg.Button("Energy envelope-over-time", **button_style, pad=(10, 10))],
 ]
 
 # Layout for the main landing page
@@ -51,6 +52,7 @@ def handle_event(event, process):
         "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-time.py",
         "Real-Time VU Meter": "Real-Time VU Meter.py",  # Added button for "Triangle Wave"
         "Power spectral density curve": "Power-spectral-density.py",
+        "Energy envelope-over-time": "Energyenvelope-over-time.py",
     }
 
     if event in script_mapping:
