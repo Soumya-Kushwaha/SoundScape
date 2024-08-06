@@ -6,3 +6,6 @@ PySimpleGUI
 sounddevice
 soundfile
 librosa
+kivy
+pygame 
+PyOpenGL
