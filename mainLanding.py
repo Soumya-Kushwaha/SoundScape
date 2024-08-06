@@ -50,7 +50,9 @@ class SoundScapeApp(App):
             "Depth-Perspective Visualizer",
             "Chroma-Feature Visualizer"
             "Lissajous-Curves Visualizer",
-            "Voxel-Grid Visualizer"
+            "Voxel-Grid Visualizer",
+            "Chromagram Visualizer",
+            "BarPlot Histogram Visualizer"
         ]
         for visualizer in visualizers:
             button = Button(
@@ -148,9 +150,11 @@ class SoundScapeApp(App):
             "Spectrogram": "Spectrogram.py",
             "Intensity vs Frequency and Time": "Intensity-vs-Frequency-and-Time.py",
             "Depth-Perspective Visualizer": "Depth-Perspective-Visualizer.py",
-            "Chroma-Feature Visualizer": "Chroma-Feature-Visualizer.py"
+            "Chroma-Feature Visualizer": "Chroma-Feature-Visualizer.py",
             "Lissajous-Curves Visualizer": "Lissajous-Curves-Visualizer.py",
-            "Voxel-Grid Visualizer": "Voxel-Grid-Visualizer.py"
+            "Voxel-Grid Visualizer": "Voxel-Grid-Visualizer.py",
+            "Chromagram Visualizer": "Chromagram.py",
+            "BarPlot Histogram Visualizer": "barplot.py"
         }
         
         script_name = instance.text
